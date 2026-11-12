@@ -21,4 +21,5 @@ jobs:
       - run: python3 -m py_compile app/cam_dashboard.py app/deploy_report.py
       - run: python3 ops/check_page.py
       - run: python3 ops/secret_scan.py
+      - run: python3 deploy/setup.py --self-test
       - run: python3 app/deploy_report.py

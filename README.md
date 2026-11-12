@@ -22,21 +22,19 @@ El valor `VISOR_CHANNELS` por defecto es 8. En un equipo de más canales se sube
 
 ## Arranque con Docker
 
-Desde la raíz de este repositorio:
+Desde la raíz de este repositorio, en el equipo que ve al grabador:
 
 ```bash
-cp .env.example .env
-cp config/cameras.example.json config/cameras.json
-cp config/go2rtc.yaml.example config/go2rtc.yaml
+python3 deploy/setup.py
 ```
 
-Edita `.env` con el nombre del grabador, el usuario y la contraseña. Edita `config/go2rtc.yaml` y cambia `USER`, `PASSWORD` y `RECORDER`. Esos dos archivos están en `.gitignore`.
+Pregunta tres cosas: la dirección del grabador, el usuario RTSP y la contraseña (no se muestra al escribirla). Con eso lee los canales del grabador, separa analógicas e IP, escribe la configuración y ofrece arrancar las cámaras. La página queda en `http://127.0.0.1:8090/`.
 
-En `config/cameras.json` deja `kind` en `analog` o `ip`. El nombre `stream_main` tiene que terminar en `_main`, y en go2rtc tiene que existir el mismo nombre acabado en `_hd`.
+Esos archivos (`.env`, `config/go2rtc.yaml`, `config/cameras.json`) se quedan en el equipo y no entran en git. Si ya existían, el asistente no los pisa: hace falta `--force`.
 
-```bash
-docker compose up -d --build
-```
+Si el grabador no responde como Hikvision, pregunta la ruta RTSP de una cámara. Enter usa el canal 101.
+
+A mano, si prefieres no usar el asistente: copia `.env.example`, `config/cameras.example.json` y `config/go2rtc.yaml.example`, rellena la cuenta y luego `docker compose up -d --build`.
 
 La página queda en `http://127.0.0.1:8090/`. El navegador de ese mismo equipo habla con go2rtc en el puerto 1984. Para un teléfono de tu LAN, cambia en `docker-compose.yml` el `127.0.0.1` de los puertos 8090, 1984 y 8555 por la dirección LAN del servidor. No pongas `0.0.0.0` en un equipo que tenga IP pública, y no publiques el 8554.
 
