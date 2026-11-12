@@ -1,10 +1,10 @@
-# Plantilla sin credenciales. Cópiala a config/go2rtc.yaml, que no se versiona.
-# Cambia USER, PASSWORD y RECORDER. No dejes la contraseña en git.
+# Template with no credentials. Copy it to config/go2rtc.yaml, which is not versioned.
+# Change USER, PASSWORD, and RECORDER. Do not commit the password.
 #
-# Dentro de Docker esta plantilla escucha en todas las interfaces del contenedor.
-# El compose publica 1984 y 8555 solo en 127.0.0.1 del host, y no publica 8554.
-# En un servidor sin Docker cambia api y webrtc a 127.0.0.1 antes de arrancar.
-# El RTSP de go2rtc (8554) se queda en localhost.
+# Inside Docker this template listens on every container interface.
+# Compose publishes 1984 and 8555 only on 127.0.0.1 of the host, and does not publish 8554.
+# On a server without Docker, change api and webrtc to 127.0.0.1 before starting.
+# go2rtc RTSP (8554) stays on localhost.
 
 api:
   listen: ":1984"
@@ -16,29 +16,29 @@ webrtc:
   listen: ":8555"
 
 ffmpeg:
-  # HEVC de rango completo se ve gris si el lector usa low_delay.
-  # Esta conversión pasa a rango de TV. No metas format= en el mismo -vf.
+  # Full-range HEVC looks gray when the reader uses low_delay.
+  # This conversion moves the picture to TV range. Do not put format= in the same -vf.
   h264/phone: "-vf scale=in_range=pc:out_range=tv -c:v libx264 -g 30 -bf 0 -profile:v high -level:v 5.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -color_range tv"
   rtsp/hd: "-timeout 20000000 -user_agent go2rtc/ffmpeg -rtsp_transport tcp -i {input}"
   rtsp/play: "-re -timeout 20000000 -user_agent go2rtc/ffmpeg -rtsp_transport tcp -i {input}"
 
 streams:
-  # Hikvision: canal 1 main = 101, sub = 102. Canal 2 = 201 y 202.
-  # Otra marca: usa el RTSP que publique el grabador y el mismo nombre en cameras.json.
-  # El nombre _main es obligatorio: la página pide el HD como el mismo nombre acabado en _hd.
+  # Hikvision: channel 1 main = 101, sub = 102. Channel 2 = 201 and 202.
+  # Another brand: use the RTSP URL the recorder publishes, and the same name in cameras.json.
+  # The _main name is required: the page asks for HD as that name ending in _hd.
   analog_1_sub: "rtsp://USER:PASSWORD@RECORDER:554/Streaming/Channels/102"
   analog_1_main:
     - "rtsp://USER:PASSWORD@RECORDER:554/Streaming/Channels/101"
   analog_1_hd:
     - "ffmpeg:rtsp://USER:PASSWORD@RECORDER:554/Streaming/Channels/101#video=h264/phone#input=rtsp/hd"
 
-  # La IP del ejemplo lleva AAC en el HD. No lo pongas en el reproductor del iPhone:
-  # la app ya pide ese reproductor sin audio, porque G.711 frena la primera imagen.
+  # The example IP camera carries AAC on HD. Do not put that on the iPhone player:
+  # the app already asks for that player without audio, because G.711 stalls the first picture.
   ip_1_sub: "rtsp://USER:PASSWORD@RECORDER:554/Streaming/Channels/202"
   ip_1_main:
     - "rtsp://USER:PASSWORD@RECORDER:554/Streaming/Channels/201"
   ip_1_hd:
     - "ffmpeg:rtsp://USER:PASSWORD@RECORDER:554/Streaming/Channels/201#video=h264/phone#audio=aac#input=rtsp/hd"
 
-# dvr_playback lo crea la app al abrir una grabación. No lo declares aquí.
-# No uses un productor ffmpeg que apunte a su propio nombre.
+# The app creates dvr_playback when a recording opens. Do not declare it here.
+# Do not add an ffmpeg producer that points at its own name.

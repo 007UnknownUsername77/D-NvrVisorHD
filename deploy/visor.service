@@ -1,5 +1,5 @@
 [Unit]
-Description=Visor, página y archivo del grabador
+Description=Visor page and recorder archive
 After=network-online.target go2rtc.service
 Wants=network-online.target
 

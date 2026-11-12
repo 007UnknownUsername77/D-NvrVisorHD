@@ -1,5 +1,5 @@
 [Unit]
-Description=go2rtc 1.9.9 para Visor
+Description=go2rtc 1.9.9 for Visor
 After=network-online.target
 Wants=network-online.target
 

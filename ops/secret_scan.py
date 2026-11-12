@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Falla si el árbol trae red privada, credenciales RTSP o una clave privada.
+"""Fail if the tree contains a private network, RTSP credentials, or a private key.
 
-Imprime CLEAN, o LEAK más la ruta y el nombre de la regla. Nunca imprime la línea.
+Prints CLEAN, or LEAK plus the path and the rule name. Never prints the line.
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {".git", "__pycache__", ".venv"}
 BAD_NAMES = {".env", "cameras.json", "go2rtc.yaml"}
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".ico"}
 
 IP = re.compile(
     r"\b(?:"
@@ -21,7 +22,7 @@ IP = re.compile(
     + r")\b"
 )
 RTSP = "rtsp" + "://"
-# Ignora el marcador de la plantilla, las llaves de código y la clase de una regex.
+# Skip the template marker, code braces, and a regex character class.
 CRED = re.compile(
     RTSP
     + r"(?!USER:PASSWORD@)"
@@ -38,13 +39,13 @@ ASSIGNED = re.compile(
 def rules(text: str) -> list[str]:
     found = []
     if IP.search(text):
-        found.append("red-privada")
+        found.append("private-net")
     if CRED.search(text):
         found.append("rtsp")
     if KEY.search(text):
-        found.append("clave")
+        found.append("private-key")
     if ASSIGNED.search(text):
-        found.append("secreto")
+        found.append("assigned-secret")
     return found
 
 
@@ -57,8 +58,10 @@ def main() -> int:
             continue
         rel = path.relative_to(ROOT)
         if path.name in BAD_NAMES:
-            print(f"LEAK {rel} nombre")
+            print(f"LEAK {rel} name")
             leaks += 1
+            continue
+        if path.suffix.lower() in IMAGE_SUFFIXES:
             continue
         try:
             text = path.read_text(encoding="utf-8")

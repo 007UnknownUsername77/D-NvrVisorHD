@@ -1,59 +1,73 @@
 # Visor
 
-Self-hosted viewer and recording browser for your own recorder. Live picture is any RTSP camera through go2rtc. Recording search and download use a Hikvision ISAPI adapter, for both analog channels and IP cameras on that recorder. Nothing is uploaded to a vendor cloud.
+![Visor](docs/icon.png)
 
-Visor es la aplicación para quien quiere ver y descargar sus cámaras en un servidor propio. No usa Hik-Connect, EZVIZ ni otra nube. El archivo de video sigue en el disco del grabador. El servidor solo prepara la vista y, cuando pides una copia, un MP4.
+Self-hosted viewer and recording browser for your own recorder. Live picture is any RTSP camera through [go2rtc](https://github.com/AlexxIT/go2rtc). Recording search and download use a Hikvision ISAPI adapter, for both analog channels and IP cameras on that recorder. Nothing is uploaded to a vendor cloud.
 
-Hay dos clases de cámara, y las dos se declaran en el catálogo:
+The video file stays on the recorder disk. This server only prepares the view and, when you ask for a copy, an MP4.
 
-- **Analógica.** Entra al grabador por la entrada de video. Visor no habla con el cable. Usa el canal que el grabador ya digitalizó.
-- **IP.** Cámara de red. Si el grabador la indexa, tiene canal y hay Grabación. Si solo tienes la URL RTSP, se ve en vivo y se deja `channel` fuera.
+There are two kinds of camera, and both are declared in the catalog:
 
-La vista en vivo vale para cualquier cámara que go2rtc pueda abrir. La Grabación, hoy, vale para un grabador Hikvision. Otra marca necesita el adaptador descrito en [docs/ADAPTERS.md](docs/ADAPTERS.md). No está escrita.
+- **Analog.** It enters the recorder on a video input. Visor does not speak to the cable. It uses the channel the recorder has already digitized.
+- **IP.** A network camera. If the recorder indexes it, it has a channel and Recording works. If you only have the RTSP URL, it is live and `channel` stays unset.
 
-## Qué necesitas
+Live view works for any camera go2rtc can open. Recording, today, works for a Hikvision recorder. Another brand needs the adapter described in [docs/ADAPTERS.md](docs/ADAPTERS.md). That adapter is not written yet.
 
-- Un grabador o NVR en tu red, no expuesto a internet.
-- go2rtc 1.9.9. La etiqueta está fijada a propósito. Esa versión es la de las plantillas de color del ejemplo.
-- Python 3.12 y ffmpeg en el mismo equipo que la página, si no usas Docker.
-- Un disco de vigilancia en el grabador si quieres días de archivo. Un SSD no adelanta la lectura cuando el límite es el puerto del grabador.
+## What you need
 
-El valor `VISOR_CHANNELS` por defecto es 8. En un equipo de más canales se sube, hasta 64.
+- A recorder or NVR on your network, not exposed to the internet.
+- go2rtc 1.9.9. The tag is pinned on purpose. That version matches the color templates in the example.
+- Python 3.12 and ffmpeg on the same machine as the page, if you are not using Docker.
+- A surveillance disk in the recorder if you want days of archive. An SSD does not make playback start sooner when the limit is the recorder port.
 
-## Arranque con Docker
+`VISOR_CHANNELS` defaults to 8. On a machine with more channels, raise it, up to 64.
 
-Desde la raíz de este repositorio, en el equipo que ve al grabador:
+## First run
+
+From the root of this repository, on the machine that can see the recorder:
 
 ```bash
-python3 deploy/setup.py
+./deploy/setup.sh
 ```
 
-Pregunta tres cosas: la dirección del grabador, el usuario RTSP y la contraseña (no se muestra al escribirla). Con eso lee los canales del grabador, separa analógicas e IP, escribe la configuración y ofrece arrancar las cámaras. La página queda en `http://127.0.0.1:8090/`.
+It asks for three things: the recorder address, the RTSP user, and the password (hidden while you type). It then reads the recorder channels, separates analog and IP, writes the configuration, and offers to start the cameras. The page is at `http://127.0.0.1:8090/`.
 
-Esos archivos (`.env`, `config/go2rtc.yaml`, `config/cameras.json`) se quedan en el equipo y no entran en git. Si ya existían, el asistente no los pisa: hace falta `--force`.
+`deploy/setup.sh` is a thin wrapper around `python3 deploy/setup.py`. It does not install packages.
 
-Si el grabador no responde como Hikvision, pregunta la ruta RTSP de una cámara. Enter usa el canal 101.
+Those files (`.env`, `config/go2rtc.yaml`, `config/cameras.json`) stay on the machine and do not enter git. If they already exist, the helper does not overwrite them: use `--force`.
 
-A mano, si prefieres no usar el asistente: copia `.env.example`, `config/cameras.example.json` y `config/go2rtc.yaml.example`, rellena la cuenta y luego `docker compose up -d --build`.
+If the recorder does not answer as Hikvision, it asks for one camera's RTSP path. Enter uses channel 101.
 
-La página queda en `http://127.0.0.1:8090/`. El navegador de ese mismo equipo habla con go2rtc en el puerto 1984. Para un teléfono de tu LAN, cambia en `docker-compose.yml` el `127.0.0.1` de los puertos 8090, 1984 y 8555 por la dirección LAN del servidor. No pongas `0.0.0.0` en un equipo que tenga IP pública, y no publiques el 8554.
+By hand, if you prefer not to use the helper: copy `.env.example`, `config/cameras.example.json`, and `config/go2rtc.yaml.example`, fill in the account, then `docker compose up -d --build`.
 
-`VISOR_DEMO=1` abre la página aunque falte la contraseña. Las peticiones de archivo responden error. Sirve para mirar la interfaz, no para ver cámaras.
+The page is at `http://127.0.0.1:8090/`. The browser on that same machine talks to go2rtc on port 1984. For a phone on your LAN, change the `127.0.0.1` of ports 8090, 1984, and 8555 in `docker-compose.yml` to the server's LAN address. Do not use `0.0.0.0` on a machine that has a public IP, and do not publish 8554.
 
-Dentro del contenedor la app escucha en todas las interfaces. El compose es quien recorta el host a loopback.
+`VISOR_DEMO=1` opens the page even when the password is missing. Archive requests return an error. It is for looking at the interface, not for watching cameras.
 
-## Arranque en el servidor, sin Docker
+Inside the container the app listens on every interface. Compose is what limits the host to loopback.
+
+## Color themes
+
+The header has a theme menu: Night, Harbor, Pine, Amber, and Day. The choice is stored in the browser under the key `visor-theme` and is applied before the cameras load. Night is the default. The picture itself stays on a black stage.
+
+## Remote access
+
+Use Tailscale, or the VPN you already run, to open the viewer from outside the building. Host the viewer in a DMZ. Do not publish 8090, 1984, 8555, or 8554 on a public IP. The browser talks to go2rtc on 1984, so a proxy on 8090 alone is not enough.
+
+Keep egress to an allowlist: DNS, NTP, and the updates you choose. Do not give the video a path to the internet, and do not let guests reach the recorder. The detail is in [SECURITY.md](SECURITY.md).
+
+## Start on a server, without Docker
 
 ```bash
 sudo useradd --system --home /var/www/cam-viewer --shell /usr/sbin/nologin visor
 sudo install -d -o visor -g visor -m 755 /var/www/cam-viewer /etc/visor /etc/go2rtc /var/backups
-sudo install -o visor -g visor -m 644 app/index.html config/cameras.json /var/www/cam-viewer/
+sudo install -o visor -g visor -m 644 app/index.html app/icon.png config/cameras.json /var/www/cam-viewer/
 sudo install -o visor -g visor -m 644 app/cam_dashboard.py /usr/local/bin/cam_dashboard.py
 sudo install -o root -g visor -m 640 .env /etc/visor/visor.env
 sudo install -o root -g visor -m 640 config/go2rtc.yaml /etc/go2rtc/go2rtc.yaml
 ```
 
-Antes de copiar el yaml, cambia `api.listen` y `webrtc.listen` a `127.0.0.1:1984` y `127.0.0.1:8555`. El 8554 ya está en localhost. Instala el binario de go2rtc 1.9.9 en `/usr/local/bin/go2rtc`.
+Before copying the yaml, change `api.listen` and `webrtc.listen` to `127.0.0.1:1984` and `127.0.0.1:8555`. 8554 is already on localhost. Install the go2rtc 1.9.9 binary at `/usr/local/bin/go2rtc`.
 
 ```bash
 sudo install -m 644 deploy/go2rtc.service deploy/visor.service /etc/systemd/system/
@@ -61,45 +75,45 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now go2rtc visor
 ```
 
-El unit de la página carga `/etc/visor/visor.env` y ata el proceso a `127.0.0.1`. Hace falta `ffmpeg` en el `PATH` o en `/usr/local/bin`.
+The page unit loads `/etc/visor/visor.env` and binds the process to `127.0.0.1`. `ffmpeg` has to be on `PATH` or in `/usr/local/bin`.
 
 ## Variables
 
-| Variable | Uso |
+| Variable | Use |
 | --- | --- |
-| `DVR_HOST` | Nombre o dirección del grabador. Vacío, la app no arranca. |
-| `DVR_USER` `DVR_PASS` | Cuenta del grabador. No van en el código. |
-| `VISOR_CHANNELS` | Canales a consultar. Defecto 8, tope 64. |
-| `VISOR_DEMO` | `1` muestra la página sin grabador. |
-| `CAM_VIEWER_HOST` | `127.0.0.1` en el servidor. `0.0.0.0` solo dentro del contenedor. |
-| `GO2RTC_URL` | API que usa el proceso Python. El navegador usa el host de la página, puerto 1984. |
-| `GO2RTC_YAML` | De aquí se copia la URL al aparecer una cámara IP nueva. |
-| `VISOR_REPORT_WEBHOOK` `VISOR_REPORT_TOKEN` `VISOR_REPORT_TO` | Informe opcional. Vacías, no se envía nada. |
+| `DVR_HOST` | Recorder name or address. Empty, the app does not start. |
+| `DVR_USER` `DVR_PASS` | Recorder account. They are not in the code. |
+| `VISOR_CHANNELS` | Channels to query. Default 8, maximum 64. |
+| `VISOR_DEMO` | `1` shows the page with no recorder. |
+| `CAM_VIEWER_HOST` | `127.0.0.1` on the server. `0.0.0.0` only inside the container. |
+| `GO2RTC_URL` | API the Python process uses. The browser uses the page host, port 1984. |
+| `GO2RTC_YAML` | Where a new IP camera copies its URL from. |
+| `VISOR_REPORT_WEBHOOK` `VISOR_REPORT_TOKEN` `VISOR_REPORT_TO` | Optional report. Empty, nothing is sent. |
 
-## Informe de despliegue
+## Deployment report
 
 ```bash
 python3 app/deploy_report.py
 ```
 
-Imprime cuántas cámaras son analógicas, cuántas IP y cuántas no tienen `kind`. No imprime nombres de stream ni URLs. Si las tres variables del webhook tienen valor, hace `POST` de `{to, subject, text, html}` a `{webhook}/report` con `Authorization: Bearer`. Algunas pasarelas exigen un `User-Agent` concreto: se cambia con `VISOR_REPORT_USER_AGENT`.
+It prints how many cameras are analog, how many are IP, and how many have no `kind`. It does not print stream names or URLs. If the three webhook variables are set, it `POST`s `{to, subject, text, html}` to `{webhook}/report` with `Authorization: Bearer`. Some gateways require a specific `User-Agent`: change it with `VISOR_REPORT_USER_AGENT`.
 
-## Cómo se ve
+## How it looks
 
-Una cámara a la vez puede ir en HD. Ese HD es H.264 de rango de televisión, porque el HEVC de rango completo se pinta gris en el navegador. El mosaico y la tele siguen en el substream, que pesa menos.
+One camera at a time can be HD. That HD is television-range H.264, because full-range HEVC paints gray in the browser. The mosaic and the TV stay on the substream, which is lighter.
 
-En el teléfono, Pantalla abre la vista grande dentro de la página. La pantalla completa nativa aplasta las cámaras altas. En el escritorio, Pantalla y el doble clic agrandan el cuadro, y el botón se queda dentro.
+On a phone, Screen opens a large view inside the page. Native fullscreen squashes tall cameras. On the desktop, Screen and a double click enlarge the picture box, and the button stays inside it.
 
-La grabación del iPhone va en HLS H.264, sin el micrófono: el audio G.711 frena la primera imagen. La descarga guarda el video tal como está en el disco. Si es H.265, la etiqueta queda en `hvc1` para que el teléfono lo abra. El audio de la descarga no va en el archivo.
+An iPhone recording plays as HLS H.264, without the microphone: G.711 audio stalls the first picture. A download keeps the video as it is stored on disk. When that video is H.265, the tag stays `hvc1` so the phone can open it. Download audio is not in the file.
 
-El primer fotograma HD puede verse gris y aclararse enseguida. La plantilla de lectura no usa `low_delay`. Con ese flag el gris no se va.
+The first HD frame can look gray and then clear. The read template does not use `low_delay`. With that flag the gray stays.
 
-## Desarrollo
+## Development
 
 ```bash
 make check
 ```
 
-Compila Python, revisa el módulo de la página con `node --check` y corre el escaneo de secretos. El detalle para contribuir está en [CONTRIBUTING.md](CONTRIBUTING.md). El modelo de amenaza corto está en [SECURITY.md](SECURITY.md).
+It compiles Python, checks the page module with `node --check`, and runs the secret scan. How to contribute is in [CONTRIBUTING.md](CONTRIBUTING.md). The short threat model is in [SECURITY.md](SECURITY.md). Third-party credits are in [CREDITS.md](CREDITS.md).
 
-La licencia propuesta es MIT, con copyright «the Visor authors» hasta que quien publique ponga su nombre. El texto está en [LICENSE](LICENSE).
+The license is MIT, with copyright "the Visor authors". The text is in [LICENSE](LICENSE).

@@ -1,14 +1,14 @@
 ---
-name: Fallo
-about: Algo no se ve, no descarga o no arranca
+name: Bug
+about: Something does not show, does not download, or does not start
 title: ""
 labels: bug
 ---
 
-## Qué pasó
+## What happened
 
-## Qué esperabas
+## What you expected
 
-## Cómo está montado
+## How it is installed
 
-Docker o systemd, y la versión de go2rtc. No pegues contraseñas ni una URL RTSP.
+Docker or systemd, and the go2rtc version. Do not paste passwords or an RTSP URL.

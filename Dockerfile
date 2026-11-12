@@ -1,12 +1,12 @@
 FROM python:3.12-slim-bookworm
 
-# ffmpeg prepara la descarga. La imagen no lleva credenciales ni catálogo real.
+# ffmpeg prepares a download. The image ships no credentials and no real catalog.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/visor
-COPY app/cam_dashboard.py app/index.html app/deploy_report.py /opt/visor/
+COPY app/cam_dashboard.py app/index.html app/deploy_report.py app/icon.png /opt/visor/
 COPY config/cameras.example.json /opt/visor/cameras.json
 RUN chmod -R a+rX /opt/visor
 

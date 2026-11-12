@@ -1,6 +1,6 @@
 {
   "title": "Visor",
-  "device": "grabador",
+  "device": "recorder",
   "defaults": {
     "quality": "sub",
     "layout": "2x2",
@@ -11,7 +11,7 @@
   "cameras": [
     {
       "id": "01",
-      "name": "Entrada",
+      "name": "Gate",
       "type": "stream",
       "kind": "analog",
       "channel": 1,
@@ -20,7 +20,7 @@
     },
     {
       "id": "02",
-      "name": "Porche",
+      "name": "Porch",
       "type": "stream",
       "kind": "ip",
       "channel": 2,

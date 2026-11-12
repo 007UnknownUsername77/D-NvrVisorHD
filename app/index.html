@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
@@ -10,9 +10,11 @@
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="apple-mobile-web-app-title" content="Visor" />
+  <link rel="icon" href="./icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icon.png">
   <title>Visor</title>
   <style>
-    :root {
+    :root, html[data-theme="night"] {
       color-scheme: dark;
       --bg: #07080c;
       --panel: #10131b;
@@ -24,9 +26,46 @@
       --accent-2: #9ec0ff;
       --rec: #ff6436;
       --live: #3ee0a2;
+      --nav-bg: #0b0d13;
+      --btn-on: #1c305c;
+      --btn-line: #3d6ec9;
+      --track: #12151d;
+      --dialog: #10131b;
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --nav: calc(58px + env(safe-area-inset-bottom));
       --top: calc(50px + env(safe-area-inset-top));
+    }
+    html[data-theme="harbor"] {
+      color-scheme: dark;
+      --bg: #061018; --panel: #0c1824; --card: #122232;
+      --line: rgba(180,210,230,.14); --text: #e7f2f8; --muted: #8eabbd;
+      --accent: #3cb6e0; --accent-2: #9adcf2;
+      --nav-bg: #08141e; --btn-on: #14384a; --btn-line: #2f86a8;
+      --track: #0e1c28; --dialog: #0c1824;
+    }
+    html[data-theme="pine"] {
+      color-scheme: dark;
+      --bg: #07110c; --panel: #0e1b14; --card: #14261c;
+      --line: rgba(170,210,180,.14); --text: #e7f6ec; --muted: #8fb39a;
+      --accent: #3cbe7a; --accent-2: #b6ebc8;
+      --nav-bg: #08140e; --btn-on: #145032; --btn-line: #2f9a62;
+      --track: #102016; --dialog: #0e1b14;
+    }
+    html[data-theme="amber"] {
+      color-scheme: dark;
+      --bg: #120e08; --panel: #1c150c; --card: #2a1e10;
+      --line: rgba(230,190,120,.16); --text: #f8f0e2; --muted: #c2aa86;
+      --accent: #e0a040; --accent-2: #f0cf96; --rec: #ff7848; --live: #d7b15a;
+      --nav-bg: #160f09; --btn-on: #5a3a14; --btn-line: #c4842a;
+      --track: #24180e; --dialog: #1c150c;
+    }
+    html[data-theme="day"] {
+      color-scheme: light;
+      --bg: #f4f1ea; --panel: #fffdf8; --card: #ffffff;
+      --line: rgba(28,25,21,.12); --text: #1c1915; --muted: #5c6570;
+      --accent: #1d4e89; --accent-2: #1d4e89; --rec: #c2410c; --live: #0f766e;
+      --nav-bg: #fffdf8; --btn-on: #dbe7f6; --btn-line: #1d4e89;
+      --track: #e6e1d6; --dialog: #fffdf8;
     }
     * { box-sizing: border-box; }
     html, body {
@@ -43,12 +82,14 @@
       display: flex; align-items: center; gap: 10px; flex: none;
     }
     header .mark {
-      width: 28px; height: 28px; border-radius: 8px; flex: none;
-      background: linear-gradient(160deg, #2a3348, #121722);
-      border: 1px solid var(--line);
-      display: grid; place-items: center;
+      width: 28px; height: 28px; border-radius: 8px; flex: none; overflow: hidden;
     }
-    header .mark svg { width: 16px; height: 16px; }
+    header .mark img { width: 28px; height: 28px; display: block; border-radius: 8px; }
+    .theme-pick { flex: none; }
+    .theme-pick select {
+      height: 28px; max-width: 7.2rem; border-radius: 8px; border: 1px solid var(--line);
+      background: var(--card); color: var(--text); padding: 0 4px; font-size: 12px;
+    }
     header .titles { min-width: 0; flex: 1; }
     header strong { display: block; font-size: 16px; font-weight: 650; letter-spacing: -.02em; }
     header span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -231,7 +272,7 @@
       flex: 0 0 auto; height: 36px; padding: 0 12px; border-radius: 999px;
       border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer;
     }
-    .btn.on { background: #1c305c; border-color: #3d6ec9; color: var(--accent-2); }
+    .btn.on { background: var(--btn-on); border-color: var(--btn-line); color: var(--accent-2); }
     .hint { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
 
     .rec-head { flex: none; padding-bottom: 4px; }
@@ -240,11 +281,11 @@
       flex: 0 0 auto; height: 34px; padding: 0 12px; border-radius: 999px;
       border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer;
     }
-    .chip.on, .span-row button.on { color: var(--text); border-color: #3d6ec9; background: #1c305c; }
+    .chip.on, .span-row button.on { color: var(--text); border-color: var(--btn-line); background: var(--btn-on); }
     .rec-controls { display: flex; gap: 8px; align-items: center; padding: 6px 12px 0; flex: none; flex-wrap: wrap; }
     .rec-controls input[type="date"] {
       height: 34px; border-radius: 999px; border: 1px solid var(--line);
-      background: var(--card); padding: 0 10px; color-scheme: dark;
+      background: var(--card); padding: 0 10px; color-scheme: inherit;
     }
     .rec-player {
       flex: 1; min-height: 120px; margin: 8px 8px 0; border-radius: 16px; overflow: hidden;
@@ -286,7 +327,7 @@
     #dlSave { display: inline-flex; align-items: center; text-decoration: none; }
     .dl-progress {
       flex: none; height: 10px; margin: 8px 14px 0; border-radius: 999px;
-      background: #12151d; border: 1px solid var(--line); overflow: hidden;
+      background: var(--track); border: 1px solid var(--line); overflow: hidden;
     }
     .dl-progress-bar {
       height: 100%; width: 0; border-radius: inherit; background: #3d6ec9;
@@ -307,14 +348,14 @@
     }
     .dl-box input[type="date"], .dl-box input[type="time"] {
       height: 34px; border-radius: 999px; border: 1px solid var(--line);
-      background: var(--card); padding: 0 8px; color-scheme: dark;
+      background: var(--card); padding: 0 8px; color-scheme: inherit;
     }
     body.tv .dl-box input { min-height: 48px; }
 
     .timeline { flex: none; padding: 4px 14px 8px; }
     .tl-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
     .tl-bar {
-      position: relative; height: 44px; border-radius: 12px; background: #12151d;
+      position: relative; height: 44px; border-radius: 12px; background: var(--track);
       border: 1px solid var(--line); touch-action: none; cursor: pointer;
     }
     .tl-seg {
@@ -355,7 +396,7 @@
       width: min(640px, calc(100vw - 16px));
       max-height: min(82dvh, 760px);
       margin: auto; padding: 0; color: var(--text);
-      border: 1px solid var(--line); border-radius: 16px; background: #10131b;
+      border: 1px solid var(--line); border-radius: 16px; background: var(--dialog);
     }
     dialog.arch::backdrop { background: rgba(0, 0, 0, .66); }
     .arch-head {
@@ -378,7 +419,7 @@
     nav {
       flex: none; height: var(--nav); padding-bottom: env(safe-area-inset-bottom);
       display: grid; grid-template-columns: 1fr 1fr;
-      background: #0b0d13; border-top: 1px solid var(--line);
+      background: var(--nav-bg); border-top: 1px solid var(--line);
     }
     nav button {
       border: 0; background: transparent; color: var(--muted); cursor: pointer;
@@ -392,11 +433,18 @@
 <body data-mode="live">
   <div class="app">
     <header>
-      <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+      <div class="mark" aria-hidden="true"><img src="./icon.png" alt="" width="28" height="28"></div>
       <div class="titles">
-        <strong id="title">Cámaras</strong>
-        <span id="subtitle">En vivo</span>
+        <strong id="title">Cameras</strong>
+        <span id="subtitle">Live</span>
       </div>
+      <label class="theme-pick"><select id="themePick" aria-label="Theme">
+        <option value="night">Night</option>
+        <option value="harbor">Harbor</option>
+        <option value="pine">Pine</option>
+        <option value="amber">Amber</option>
+        <option value="day">Day</option>
+      </select></label>
       <div class="clock" id="clock">--:--</div>
     </header>
 
@@ -404,19 +452,19 @@
       <div class="stage-wrap">
         <div class="stage one" id="stage" tabindex="0"></div>
         <div class="zoom-ctl" id="liveZoom">
-          <button type="button" data-zoom="out" aria-label="Alejar">−</button>
-          <button type="button" data-zoom="in" aria-label="Acercar">+</button>
+          <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+          <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
         </div>
-        <button class="btn live-fs" id="liveFs" type="button">Pantalla</button>
+        <button class="btn live-fs" id="liveFs" type="button">Screen</button>
       </div>
       <div class="film" id="film"></div>
       <div class="tools">
         <button class="btn on" id="btnHd" type="button">HD</button>
-        <button class="btn" id="btnGrid" type="button">Mosaico</button>
-        <button class="btn" id="btnMute" type="button">Silencio</button>
-        <button class="btn" id="btnShot" type="button">Captura</button>
-        <button class="btn" id="btnFs" type="button">Pantalla</button>
-        <span class="hint" id="liveHint">HD · 1 canal</span>
+        <button class="btn" id="btnGrid" type="button">Mosaic</button>
+        <button class="btn" id="btnMute" type="button">Mute</button>
+        <button class="btn" id="btnShot" type="button">Shot</button>
+        <button class="btn" id="btnFs" type="button">Screen</button>
+        <span class="hint" id="liveHint">HD · 1 channel</span>
       </div>
     </section>
 
@@ -426,45 +474,45 @@
         <div class="rec-controls">
           <input type="date" id="recDate" />
           <div class="span-row" id="recSpan">
-            <button type="button" data-days="1">Hoy</button>
-            <button type="button" data-days="2" class="on">2 días</button>
-            <button type="button" data-days="7">7 días</button>
+            <button type="button" data-days="1">Today</button>
+            <button type="button" data-days="2" class="on">2 days</button>
+            <button type="button" data-days="7">7 days</button>
           </div>
-          <button class="btn" id="recSearch" type="button">Actualizar</button>
-          <button class="btn" id="archOpen" type="button">Archivo</button>
-          <button class="btn on" id="recMute" type="button">Sonido</button>
+          <button class="btn" id="recSearch" type="button">Refresh</button>
+          <button class="btn" id="archOpen" type="button">Archive</button>
+          <button class="btn on" id="recMute" type="button">Sound</button>
         </div>
       </div>
       <div class="rec-player" id="recPlayer">
-        <div class="empty" id="recPlaceholder">Arrastra la barra para ver esa hora</div>
+        <div class="empty" id="recPlaceholder">Drag the bar to that hour</div>
         <div class="rec-skip">
-          <button class="btn" id="recBack" type="button" aria-label="Retroceder 10 segundos" aria-keyshortcuts="ArrowLeft">−10 s</button>
-          <button class="btn" id="recFwd" type="button" aria-label="Avanzar 10 segundos" aria-keyshortcuts="ArrowRight">+10 s</button>
+          <button class="btn" id="recBack" type="button" aria-label="Back 10 seconds" aria-keyshortcuts="ArrowLeft">−10 s</button>
+          <button class="btn" id="recFwd" type="button" aria-label="Forward 10 seconds" aria-keyshortcuts="ArrowRight">+10 s</button>
         </div>
-        <button class="btn rec-fs" id="recFs" type="button">Pantalla</button>
+        <button class="btn rec-fs" id="recFs" type="button">Screen</button>
         <div class="zoom-ctl" id="recZoom">
-          <button type="button" data-zoom="out" aria-label="Alejar">−</button>
-          <button type="button" data-zoom="in" aria-label="Acercar">+</button>
+          <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+          <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
         </div>
       </div>
-      <div class="rec-status" id="recStatus">La barra recorre horas y días. Calidad máxima.</div>
+      <div class="rec-status" id="recStatus">The bar covers hours and days. Highest quality.</div>
       <div class="dl-box">
-        <label>Desde <input type="date" id="dlFromDate" /><input type="time" id="dlFromTime" step="1" /></label>
-        <label>Hasta <input type="date" id="dlToDate" /><input type="time" id="dlToTime" step="1" /></label>
-        <button class="btn" id="dlBtn" type="button">Descargar</button>
-        <button class="btn" id="dlHere" type="button">1 min desde aquí</button>
-        <a class="btn" id="dlSave" hidden>Guardar</a>
+        <label>From <input type="date" id="dlFromDate" /><input type="time" id="dlFromTime" step="1" /></label>
+        <label>To <input type="date" id="dlToDate" /><input type="time" id="dlToTime" step="1" /></label>
+        <button class="btn" id="dlBtn" type="button">Download</button>
+        <button class="btn" id="dlHere" type="button">1 min from here</button>
+        <a class="btn" id="dlSave" hidden>Save</a>
       </div>
-      <div class="dl-progress" id="dlProgress" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Descarga del video">
+      <div class="dl-progress" id="dlProgress" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Video download">
         <div class="dl-progress-bar" id="dlProgressBar"></div>
       </div>
       <div class="rec-status" id="dlStatus"></div>
       <div class="timeline">
         <div class="tl-top">
-          <span id="tlRange">Grabación</span>
+          <span id="tlRange">Recording</span>
           <span id="tlNow">—</span>
         </div>
-        <div class="tl-bar" id="tlBar" role="slider" aria-label="Línea de tiempo de grabación">
+        <div class="tl-bar" id="tlBar" role="slider" aria-label="Recording timeline">
           <div class="tl-play" id="tlPlay"><span class="tl-bubble" id="tlBubble">—</span></div>
         </div>
         <div class="tl-labels" id="tlLabels"></div>
@@ -472,37 +520,52 @@
       <ul class="clips" id="clipList"></ul>
     </section>
 
-    <button type="button" class="ios-close" id="iosClose" aria-label="Cerrar">×</button>
+    <button type="button" class="ios-close" id="iosClose" aria-label="Close">×</button>
     <nav>
       <button type="button" id="tabLive" class="on">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-        En vivo
+        Live
       </button>
       <button type="button" id="tabRec">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
-        Grabación
+        Recording
       </button>
     </nav>
   </div>
 
   <dialog class="arch" id="archDlg" aria-labelledby="archTitle">
     <div class="arch-head">
-      <strong id="archTitle">Grabaciones en el DVR</strong>
+      <strong id="archTitle">Recordings on the recorder</strong>
       <div class="arch-actions">
-        <button class="btn" id="archRefresh" type="button">Actualizar</button>
-        <button class="btn" id="archClose" type="button">Cerrar</button>
+        <button class="btn" id="archRefresh" type="button">Refresh</button>
+        <button class="btn" id="archClose" type="button">Close</button>
       </div>
     </div>
-    <p class="arch-status" id="archStatus">Buscando las grabaciones de las cámaras…</p>
+    <p class="arch-status" id="archStatus">Looking up recordings…</p>
     <div class="arch-list" id="archList"></div>
   </dialog>
 
   <script type="module">
     const GO2RTC = (() => {
-      // Mismo host que la página, puerto 1984. El proceso Python usa GO2RTC_URL.
+      // Same host as the page, port 1984. The Python process uses GO2RTC_URL.
       const h = location.hostname || '127.0.0.1';
       return `http://${h}:1984`;
     })();
+
+    const THEMES = { night: '#07080c', harbor: '#061018', pine: '#07110c', amber: '#120e08', day: '#f4f1ea' };
+    function applyTheme(name) {
+      const theme = Object.prototype.hasOwnProperty.call(THEMES, name) ? name : 'night';
+      document.documentElement.dataset.theme = theme;
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', THEMES[theme]);
+      try { localStorage.setItem('visor-theme', theme); } catch (err) { /* private mode */ }
+      const pick = document.getElementById('themePick');
+      if (pick && pick.value !== theme) pick.value = theme;
+    }
+    let savedTheme = 'night';
+    try { savedTheme = localStorage.getItem('visor-theme') || 'night'; } catch (err) { savedTheme = 'night'; }
+    applyTheme(savedTheme);
+    document.getElementById('themePick').addEventListener('change', (ev) => applyTheme(ev.target.value));
     const ua = navigator.userAgent || '';
     const isIOS = (() => {
       if (/iPad|iPhone|iPod/.test(ua)) return true;
@@ -511,25 +574,25 @@
     })();
     const isTV = new URLSearchParams(location.search).get('tv') === '1'
       || /Tizen|SMART-TV|SmartTV|Web0S|HbbTV/i.test(ua);
-    // El HEVC de rango completo sale gris o verde en Android, y la 3 y la 4
-    // además no caben en el nivel que decodifica el teléfono. La 7 sí.
+    // Full-range HEVC paints gray or green on Android, and cameras 3 and 4
+    // also exceed the level that phone decodes. Camera 7 fits.
     const isAndroid = /Android/i.test(ua) && !isTV;
-    // Vista grande, X y transiciones: iPhone y Android. La tele y el escritorio
-    // siguen con la pantalla nativa. El códec de cada uno no cambia.
+    // Large view, close, and transitions: iPhone and Android. TV and desktop
+    // keep native fullscreen. Each codec path stays as it is.
     const isPhone = isIOS || isAndroid;
-    // La tele no aguanta WebRTC ni el main H.265: eso reconecta y se ve a saltos.
-    // MSE del sub H.264 no transcodifica. MJPEG solo si MSE falla.
+    // The TV cannot hold WebRTC or the H.265 main: that reconnects and stutters.
+    // Substream H.264 over MSE is not transcoded. MJPEG is only the MSE fallback.
     const playMode = isTV ? 'mse,mjpeg' : (isIOS ? 'webrtc,hls,mse,mjpeg' : 'webrtc,mse,hls,mjpeg');
     if (isTV) document.body.classList.add('tv');
     if (isIOS) document.body.classList.add('ios');
     if (isPhone) document.body.classList.add('phone');
     const phoneQuery = window.matchMedia('(max-width: 800px)');
 
-    // Puerto Ethernet del DVR: 100 Mbps. Un main ronda 6 Mbps y además pide
-    // transcodificación. Mosaico y selector abren en sub H.264 solo canales con imagen.
-    // Cada 15 s se miden los que no están en pantalla. Si uno empieza a verse, entra solo.
-    // Una cámara nueva, del DVR o IP, es otra entrada en cameras.json. channel
-    // solo si el DVR la graba. Sin channel queda en vivo y fuera de Grabación.
+    // Recorder Ethernet is 100 Mbps. One main is about 6 Mbps and also needs
+    // a transcode. Mosaic and the selector open H.264 substreams that have a picture.
+    // Every 15s the page probes channels that are not on screen and adds one that appears.
+    // A new camera, on the recorder or IP, is another cameras.json entry. channel
+    // is set only when the recorder stores it. Without channel it stays live-only.
 
     await import(`${GO2RTC}/video-stream.js`);
     const cfg = await fetch('./cameras.json', { cache: 'no-store' }).then(r => r.json()).catch(() => null);
@@ -563,8 +626,8 @@
     function phone() { return phoneQuery.matches; }
     function focused() { return streamCams[focus] || null; }
     function streamOf(cam, q) {
-      // El main HEVC es rango completo y el navegador lo pinta gris.
-      // PC y teléfono usan el H.264 de rango de TV. La tele se queda en el sub.
+      // The HEVC main is full range and the browser paints it gray.
+      // PC and phone use TV-range H.264. The TV stays on the substream.
       if (q === 'main' && cam && cam.stream_main && !isTV) {
         const hdName = String(cam.stream_main).replace(/_main$/, '_hd');
         if (hdName !== cam.stream_main) return hdName;
@@ -657,7 +720,7 @@
         adoptStreams((cfg && cfg.cameras) || []);
       } catch (_) {}
     }
-    // Con dar en el catálogo, ese recuadro manda en HD, Fluido, mosaico y Grabación. Sin dar, el cuadro usa sus píxeles.
+    // A catalog dar wins in HD, smooth, mosaic, and Recording. Without dar, the frame uses its own pixels.
     function camDar(cam) {
       const d = cam && cam.dar;
       if (!Array.isArray(d) || d.length !== 2) return 0;
@@ -779,10 +842,10 @@
             v.muted = true;
             const btn = document.getElementById('recMute');
             if (btn) {
-              btn.textContent = 'Silencio';
+              btn.textContent = 'Mute';
               btn.classList.remove('on');
             }
-            recStatus.textContent = 'Toca Sonido para oír el micrófono.';
+            recStatus.textContent = 'Tap Sound to hear the microphone.';
           });
         }
         return true;
@@ -833,7 +896,7 @@
       const name = streamOf(cam, quality);
       const vs = document.createElement('video-stream');
       vs.background = false;
-      // El main HEVC no entra por WebRTC. En el iPhone ese caso va por HLS.
+      // The HEVC main does not go through WebRTC. On iPhone that case uses HLS.
       vs.mode = (isIOS && /_main$/.test(name)) ? 'hls,mp4' : playMode;
       if (isTV || view === 'grid') {
         vs.media = 'video';
@@ -849,7 +912,7 @@
       else start();
       const tag = document.createElement('div');
       tag.className = 'tag';
-      tag.innerHTML = `<span>${cam.name}</span><b class="${quality === 'main' ? '' : 'sub'}">${quality === 'main' ? 'HD' : 'Fluido'}</b>`;
+      tag.innerHTML = `<span>${cam.name}</span><b class="${quality === 'main' ? '' : 'sub'}">${quality === 'main' ? 'HD' : 'Smooth'}</b>`;
       cell.append(vs, tag);
       if (view === 'grid') {
         cell.addEventListener('click', () => openOne(streamCams.indexOf(cam)));
@@ -870,19 +933,19 @@
       stage.className = 'stage ' + (view === 'one' ? 'one' : 'grid');
       if (view !== 'grid') {
         if (!cam) {
-          stage.innerHTML = '<div class="empty">No hay cámaras</div>';
+          stage.innerHTML = '<div class="empty">No cameras</div>';
         } else {
           addCell(cam, hd ? 'main' : 'sub');
           title.textContent = cam.name;
           subtitle.textContent = isTV
-            ? (hd ? 'Tele · HD' : 'Tele · fluido')
-            : (hd ? 'En vivo · HD' : 'En vivo · fluido');
+            ? (hd ? 'TV · HD' : 'TV · smooth')
+            : (hd ? 'Live · HD' : 'Live · smooth');
           liveHint.textContent = isTV
-            ? (hd ? 'HD · 1 canal' : 'Tele · 1 canal')
-            : (hd ? 'HD · 1 canal' : 'Fluido · 1 canal');
+            ? (hd ? 'HD · 1 channel' : 'TV · 1 channel')
+            : (hd ? 'HD · 1 channel' : 'Smooth · 1 channel');
         }
       } else {
-        stage.innerHTML = '<div class="empty">Buscando señal…</div>';
+        stage.innerHTML = '<div class="empty">Looking for a picture…</div>';
         probeEpoch += 1;
         const epoch = probeEpoch;
         let live = [];
@@ -891,16 +954,16 @@
         stage.innerHTML = '';
         signalCams = live;
         mosaicCams = live;
-        title.textContent = 'Mosaico';
+        title.textContent = 'Mosaic';
         if (!live.length) {
-          stage.innerHTML = '<div class="empty">Ningún canal con señal</div>';
-          subtitle.textContent = 'Sin señal';
-          liveHint.textContent = 'Sin señal';
+          stage.innerHTML = '<div class="empty">No channel has a picture</div>';
+          subtitle.textContent = 'No signal';
+          liveHint.textContent = 'No signal';
         } else {
           fitGrid(live.length);
           live.forEach((c, i) => addCell(c, 'sub', i * 120));
-          subtitle.textContent = `Fluido · ${live.length} con señal`;
-          liveHint.textContent = `Fluido · ${live.length} con señal`;
+          subtitle.textContent = `Smooth · ${live.length} with picture`;
+          liveHint.textContent = `Smooth · ${live.length} with picture`;
           markGrid();
           armLiveEdge();
         }
@@ -973,14 +1036,14 @@
       });
       mosaicCams = signalCams.slice();
       if (!signalCams.length) {
-        stage.innerHTML = '<div class="empty">Ningún canal con señal</div>';
-        subtitle.textContent = 'Sin señal';
-        liveHint.textContent = 'Sin señal';
+        stage.innerHTML = '<div class="empty">No channel has a picture</div>';
+        subtitle.textContent = 'No signal';
+        liveHint.textContent = 'No signal';
         return;
       }
       fitGrid(signalCams.length);
-      subtitle.textContent = `Fluido · ${signalCams.length} con señal`;
-      liveHint.textContent = `Fluido · ${signalCams.length} con señal`;
+      subtitle.textContent = `Smooth · ${signalCams.length} with picture`;
+      liveHint.textContent = `Smooth · ${signalCams.length} with picture`;
       markGrid();
     }
 
@@ -1065,7 +1128,7 @@
     });
     document.getElementById('btnMute').addEventListener('click', (ev) => {
       muted = !muted;
-      ev.currentTarget.textContent = muted ? 'Silencio' : 'Sonido';
+      ev.currentTarget.textContent = muted ? 'Mute' : 'Sound';
       ev.currentTarget.classList.toggle('on', !muted);
       document.querySelectorAll('#stage video').forEach(v => {
         v.muted = muted;
@@ -1074,7 +1137,7 @@
     });
     document.getElementById('recMute').addEventListener('click', (ev) => {
       recMuted = !recMuted;
-      ev.currentTarget.textContent = recMuted ? 'Silencio' : 'Sonido';
+      ev.currentTarget.textContent = recMuted ? 'Mute' : 'Sound';
       ev.currentTarget.classList.toggle('on', !recMuted);
       const v = recVs && recVs.querySelector('video');
       if (!v) return;
@@ -1228,8 +1291,8 @@
       iosCloseAt = now;
       setIosLarge(false);
     }
-    // El video del teléfono se queda el primer toque. pointerup cierra al instante
-    // y no deja que ese mismo gesto cuente como doble toque en la imagen.
+    // The phone video keeps the first tap. pointerup closes at once
+    // and that same gesture must not count as a double tap on the picture.
     iosClose.addEventListener('pointerdown', (ev) => {
       ev.stopPropagation();
     });
@@ -1512,7 +1575,7 @@
           focus = streamCams.indexOf(cam);
           sessionStorage.setItem('camIdx', String(focus));
           renderRecChips();
-          loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+          loadRec().catch(err => { recStatus.textContent = 'The recorder could not be reached.'; });
         });
         recChips.appendChild(b);
       });
@@ -1612,7 +1675,7 @@
       clipList.innerHTML = '';
       const items = (recData && recData.items) || [];
       if (!items.length) {
-        clipList.innerHTML = '<li class="rec-empty">Sin grabación en ese rango</li>';
+        clipList.innerHTML = '<li class="rec-empty">No recording in that range</li>';
         return;
       }
       items.forEach(it => {
@@ -1707,22 +1770,22 @@
       dlProgress.setAttribute('aria-valuenow', '0');
       dlSave.hidden = true;
       dlSave.removeAttribute('href');
-      dlSave.textContent = 'Guardar';
+      dlSave.textContent = 'Save';
     }
     function showSave(url, name) {
       dlSave.href = url;
       if (isIOS) {
         dlSave.removeAttribute('download');
-        dlSave.textContent = 'Abrir';
+        dlSave.textContent = 'Open';
       } else {
-        dlSave.download = name || 'grabacion.mp4';
-        dlSave.textContent = 'Guardar';
+        dlSave.download = name || 'recording.mp4';
+        dlSave.textContent = 'Save';
       }
       dlSave.hidden = false;
     }
     async function shareOnIphone(blob, name) {
       if (!isIOS || typeof navigator.share !== 'function') return false;
-      const file = new File([blob], name || 'grabacion.mp4', { type: 'video/mp4' });
+      const file = new File([blob], name || 'recording.mp4', { type: 'video/mp4' });
       const payload = { files: [file] };
       try {
         if (navigator.canShare && !navigator.canShare(payload)) return false;
@@ -1743,30 +1806,30 @@
       if (!(total > 0) || total > 96 * 1024 * 1024) {
         setBar(100, false);
         dlStatus.textContent = isIOS
-          ? `Listo: ${label}. Toca Abrir para verlo en el iPhone.`
-          : `Listo: ${label}. Toca Guardar.`;
+          ? `Ready: ${label}. Tap Open to watch it on the iPhone.`
+          : `Ready: ${label}. Tap Save.`;
         if (!isIOS) { try { dlSave.click(); } catch (_) {} }
         return;
       }
       setBar(90, false);
-      dlStatus.textContent = `Descargando ${fmtDur(info.seconds)} · 0 de ${mbNum(total)} MB`;
+      dlStatus.textContent = `Downloading ${fmtDur(info.seconds)} · 0 of ${mbNum(total)} MB`;
       let response;
       try {
         response = await fetch(url, { cache: 'no-store' });
       } catch (_) {
         setBar(100, false);
-        dlStatus.textContent = `Listo: ${label}. Toca Guardar.`;
+        dlStatus.textContent = `Ready: ${label}. Tap Save.`;
         return;
       }
       const ctype = (response.headers.get('Content-Type') || '').toLowerCase();
       if (!response.ok || ctype.includes('json') || !response.body) {
-        let detail = 'No se pudo guardar el archivo.';
+        let detail = 'The file could not be saved.';
         try {
           const body = await response.json();
           if (body.detail) detail = body.detail;
         } catch (_) {}
         setBar(100, false);
-        dlStatus.textContent = `${detail} Toca Guardar.`;
+        dlStatus.textContent = `${detail} Tap Save.`;
         return;
       }
       const length = Number(response.headers.get('Content-Length')) || total;
@@ -1781,12 +1844,12 @@
           got += step.value.byteLength;
           const frac = length > 0 ? Math.min(1, got / length) : 0;
           setBar(90 + frac * 10, false);
-          dlStatus.textContent = `Descargando ${fmtDur(info.seconds)} · ${mbNum(got)} de ${mbNum(length)} MB`;
+          dlStatus.textContent = `Downloading ${fmtDur(info.seconds)} · ${mbNum(got)} of ${mbNum(length)} MB`;
         }
       } catch (_) {
         try { reader.cancel(); } catch (__) {}
         setBar(90, false);
-        dlStatus.textContent = 'Se cortó al guardar. Toca Guardar para bajarlo otra vez.';
+        dlStatus.textContent = 'The save was interrupted. Tap Save to download it again.';
         return;
       }
       if (job !== dlJob) {
@@ -1807,35 +1870,35 @@
       setTimeout(() => URL.revokeObjectURL(obj), 120000);
       setBar(100, false);
       dlStatus.textContent = shared
-        ? `Listo: ${label}. Guárdalo desde la hoja del iPhone.`
+        ? `Ready: ${label}. Save it from the iPhone share sheet.`
         : (isIOS
-          ? `Listo: ${label}. Toca Abrir para verlo en el iPhone.`
-          : `Listo: ${label}. Si no se guardó, toca Guardar.`);
+          ? `Ready: ${label}. Tap Open to watch it on the iPhone.`
+          : `Ready: ${label}. If it did not save, tap Save.`);
     }
     async function downloadSpan(start, end) {
-      if (!start || !end) { dlStatus.textContent = 'Elige fecha y hora de inicio y de fin.'; return; }
+      if (!start || !end) { dlStatus.textContent = 'Choose a start and an end.'; return; }
       const secs = (Date.parse(end) - Date.parse(start)) / 1000;
-      if (!(secs >= 60)) { dlStatus.textContent = 'La hora final tiene que quedar al menos un minuto después.'; return; }
-      if (secs > 4 * 3600) { dlStatus.textContent = 'El máximo para descargar es 4 horas.'; return; }
+      if (!(secs >= 60)) { dlStatus.textContent = 'The end time has to be at least one minute later.'; return; }
+      if (secs > 4 * 3600) { dlStatus.textContent = 'The longest download is 4 hours.'; return; }
       const job = ++dlJob;
       dlBtn.disabled = true;
       dlHere.disabled = true;
       hideBar();
       setBar(0, true);
-      dlStatus.textContent = 'Revisando ese tramo…';
+      dlStatus.textContent = 'Checking that span…';
       let token = '';
       try {
         const q = `cam=${encodeURIComponent(recChannel)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
         const r = await fetch(`/api/recordings/export?${q}&check=1`, { cache: 'no-store' });
         const j = await r.json();
         if (job !== dlJob) return;
-        if (!r.ok) throw new Error(j.detail || 'No hay grabación en ese tramo.');
+        if (!r.ok) throw new Error(j.detail || 'No recording in that span.');
         let gap = '';
-        if (Math.abs((Number(j.seconds) || secs) - secs) > 2) gap = ' Hay huecos; el archivo trae lo grabado.';
+        if (Math.abs((Number(j.seconds) || secs) - secs) > 2) gap = ' There are gaps; the file has what was recorded.';
         const built = await fetch(`/api/recordings/export?${q}&build=1`, { cache: 'no-store' });
         const started = await built.json();
         if (job !== dlJob) return;
-        if (!built.ok || !started.token) throw new Error(started.detail || 'No se pudo armar el archivo.');
+        if (!built.ok || !started.token) throw new Error(started.detail || 'The file could not be built.');
         token = started.token;
         let ready = started.state === 'ready' ? started : null;
         let misses = 0;
@@ -1846,25 +1909,25 @@
           try {
             const pr = await fetch(`/api/recordings/export?progress=1&token=${encodeURIComponent(token)}`, { cache: 'no-store' });
             p = await pr.json();
-            if (!pr.ok && p.state !== 'error') throw new Error(p.detail || 'Sin respuesta.');
+            if (!pr.ok && p.state !== 'error') throw new Error(p.detail || 'No response.');
           } catch (err) {
             misses += 1;
             if (misses < 8) continue;
-            throw new Error((err && err.message) || 'Se perdió el contacto. Pulsa Descargar otra vez.');
+            throw new Error((err && err.message) || 'The connection dropped. Press Download again.');
           }
           misses = 0;
-          if (p.state === 'error') throw new Error(p.detail || 'No se pudo armar el archivo.');
+          if (p.state === 'error') throw new Error(p.detail || 'The file could not be built.');
           const total = Number(p.bytes) || Number(j.bytes) || 0;
           const done = Number(p.done) || 0;
           const waiting = p.state === 'building' && done <= 0;
           const frac = total > 0 ? Math.min(1, done / total) : 0;
           setBar(waiting ? 0 : frac * 90, waiting);
-          const archivo = Number(p.files) > 1
-            ? `archivo ${Math.min(p.files, (Number(p.fileDone) || 0) + 1)} de ${p.files} · `
+          const fileLabel = Number(p.files) > 1
+            ? `file ${Math.min(p.files, (Number(p.fileDone) || 0) + 1)} of ${p.files} · `
             : '';
           dlStatus.textContent = waiting
-            ? `Conectando con la grabación…${gap}`
-            : `Preparando ${fmtDur(p.seconds || j.seconds)} · ${archivo}${mbNum(done)} de ${mbNum(total)} MB.${gap}`;
+            ? `Connecting to the recording…${gap}`
+            : `Preparing ${fmtDur(p.seconds || j.seconds)} · ${fileLabel}${mbNum(done)} of ${mbNum(total)} MB.${gap}`;
           if (p.state === 'ready') ready = p;
         }
         if (!ready || job !== dlJob) return;
@@ -1872,7 +1935,7 @@
       } catch (err) {
         if (job !== dlJob) return;
         hideBar();
-        dlStatus.textContent = (err && err.message) ? err.message : 'No se pudo preparar la descarga.';
+        dlStatus.textContent = (err && err.message) ? err.message : 'The download could not be prepared.';
       } finally {
         if (job === dlJob) {
           dlBtn.disabled = false;
@@ -1888,7 +1951,7 @@
     function downloadHere() {
       const from = currentPlayMs();
       if (from == null) {
-        dlStatus.textContent = 'Abre la grabación y descarga desde ese segundo.';
+        dlStatus.textContent = 'Open the recording and download from that second.';
         return;
       }
       setDl(from, from + 60 * 1000);
@@ -1901,7 +1964,7 @@
       recZoom.reset();
       const seq = ++recSeq;
       const endMs = Date.parse(hit.item.end);
-      recStatus.textContent = 'Abriendo esa hora en calidad máxima…';
+      recStatus.textContent = 'Opening that hour at full quality…';
       if (recVs) {
         try { recVs.src = ''; recVs.remove(); } catch (_) {}
         recVs = null;
@@ -1921,14 +1984,14 @@
         });
         const j = await r.json();
         if (seq !== recSeq) return;
-        if (!r.ok || !j.stream) throw new Error(j.detail || 'No se pudo abrir ese punto.');
+        if (!r.ok || !j.stream) throw new Error(j.detail || 'That point could not be opened.');
         const old = recPlayer.querySelector('.empty');
         if (old) old.remove();
         recVs = document.createElement('video-stream');
         recVs.background = false;
         recVs.dataset.rec = '1';
-        // iPhone no tiene MSE: mjpeg del DVR responde clave incorrecta y el visor pinta "error".
-        // En el teléfono se usa HLS. En la tele y el PC, MSE y si falla HLS.
+        // iPhone has no MSE: DVR mjpeg answers a bad key and the viewer shows "error".
+        // The phone uses HLS. TV and PC use MSE, then HLS if that fails.
         recVs.mode = isIOS ? 'hls,mp4' : 'mse,hls,mp4';
         recVs.media = 'video,audio';
         recVs.visibilityCheck = false;
@@ -1938,7 +2001,7 @@
         const recMo = new MutationObserver(() => {
           const mode = recVs && recVs.querySelector('.mode');
           if (mode && mode.textContent === 'error') {
-            recStatus.textContent = 'No se abrió el video. Prueba otra hora o descarga ese tramo.';
+            recStatus.textContent = 'The video did not open. Try another hour or download that span.';
           }
           const v = recVs && recVs.querySelector('video');
           if (v && !v.dataset.recArm) {
@@ -1947,7 +2010,7 @@
               if (seq !== recSeq) return;
               clearTimeout(recVs._wait);
               recStatus.textContent = hit.gap
-                ? 'No había video en ese punto. Sigue la grabación más cercana.'
+                ? 'No video at that point. The nearest recording continues.'
                 : '−10 s y +10 s, o las flechas, saltan diez segundos.';
             });
           }
@@ -1960,26 +2023,26 @@
         recPlayAt = Date.now();
         if (recTimer) clearInterval(recTimer);
         recTimer = setInterval(placeHead, 500);
-        title.textContent = (streamCams.find(c => dvrChannel(c) === recChannel) || {}).name || 'Grabación';
-        subtitle.textContent = 'Grabación · HD · ' + fmtPlay(recPlayFrom);
-        recStatus.textContent = 'Cargando la grabación…';
+        title.textContent = (streamCams.find(c => dvrChannel(c) === recChannel) || {}).name || 'Recording';
+        subtitle.textContent = 'Recording · HD · ' + fmtPlay(recPlayFrom);
+        recStatus.textContent = 'Loading the recording…';
         recVs._wait = setTimeout(() => {
           if (seq !== recSeq) return;
           const v = recVs && recVs.querySelector('video');
           if (v && v.readyState >= 2) return;
-          recStatus.textContent = 'La grabación no llegó. Prueba otra hora o descarga ese tramo.';
+          recStatus.textContent = 'The recording did not arrive. Try another hour or download that span.';
         }, 12000);
         placeHead();
       } catch (err) {
         if (seq !== recSeq) return;
-        recStatus.textContent = (err && err.message) ? err.message : 'No se pudo abrir ese punto.';
+        recStatus.textContent = (err && err.message) ? err.message : 'That point could not be opened.';
       }
     }
     function seekRec(ms, immediate) {
       if (recNudgeTimer) { clearTimeout(recNudgeTimer); recNudgeTimer = null; recNudgeMs = 0; }
       if (!recData) return;
       const hit = snap(ms);
-      if (!hit) { recStatus.textContent = 'Sin grabación en ese punto.'; return; }
+      if (!hit) { recStatus.textContent = 'No recording at that point.'; return; }
       recPlayFrom = hit.ms;
       recPlayAt = 0;
       placeHead();
@@ -1989,7 +2052,7 @@
     }
     function nudgeRec(deltaMs) {
       if (!recData || recPlayFrom == null) {
-        recStatus.textContent = 'Abre una grabación para avanzar o retroceder 10 segundos.';
+        recStatus.textContent = 'Open a recording to skip 10 seconds.';
         return;
       }
       if (!recNudgeTimer) recNudgeBase = currentPlayMs();
@@ -2015,7 +2078,7 @@
       if (!recDate.value) return;
       stopLive();
       stopRec();
-      recStatus.textContent = 'Buscando grabaciones…';
+      recStatus.textContent = 'Looking up recordings…';
       const r = await fetch(`/api/recordings?cam=${encodeURIComponent(recChannel)}&date=${encodeURIComponent(recDate.value)}&days=${recSpan}`, { cache: 'no-store' });
       const j = await r.json();
       if (document.body.dataset.mode !== 'rec') return;
@@ -2027,8 +2090,8 @@
       renderClips();
       const items = j.items || [];
       recStatus.textContent = items.length
-        ? items.length + ' tramo(s). Arrastra la barra entre horas y días.'
-        : 'Sin grabación en ese rango.';
+        ? items.length + ' clip(s). Drag the bar across hours and days.'
+        : 'No recording in that range.';
       if (!items.length) return;
       const edge = Math.min(Date.parse(j.now), Date.parse(items[items.length - 1].end));
       const at = Number.isFinite(pinMs)
@@ -2043,13 +2106,13 @@
       if (!btn) return;
       recSpan = Number(btn.dataset.days) || 1;
       document.querySelectorAll('#recSpan button').forEach(b => b.classList.toggle('on', b === btn));
-      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+      loadRec().catch(err => { recStatus.textContent = 'The recorder could not be reached.'; });
     });
     recDate.addEventListener('change', () => {
-      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+      loadRec().catch(err => { recStatus.textContent = 'The recorder could not be reached.'; });
     });
     document.getElementById('recSearch').addEventListener('click', () => {
-      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+      loadRec().catch(err => { recStatus.textContent = 'The recorder could not be reached.'; });
     });
     tlBar.addEventListener('pointerdown', (ev) => {
       if (!recData) return;
@@ -2089,10 +2152,10 @@
       document.getElementById('tabLive').classList.remove('on');
       const cam = focused();
       recChannel = dvrChannel(cam) || dvrChannel(streamCams.find(c => dvrChannel(c))) || 1;
-      title.textContent = cam ? cam.name : 'Grabación';
-      subtitle.textContent = 'Grabación · HD';
+      title.textContent = cam ? cam.name : 'Recording';
+      subtitle.textContent = 'Recording · HD';
       renderRecChips();
-      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+      loadRec().catch(err => { recStatus.textContent = 'The recorder could not be reached.'; });
     }
     document.getElementById('tabLive').addEventListener('click', showLive);
     document.getElementById('tabRec').addEventListener('click', showRec);
@@ -2127,14 +2190,14 @@
         const head = document.createElement('h3');
         head.className = 'arch-cam';
         const known = streamCams.find(c => dvrChannel(c) === cam.cam);
-        head.textContent = (known && known.name) || ('Cámara ' + pad2(cam.cam));
-        if (cam.truncated) head.textContent += ' · hay más en el disco';
+        head.textContent = (known && known.name) || ('Camera ' + pad2(cam.cam));
+        if (cam.truncated) head.textContent += ' · more remains on disk';
         frag.appendChild(head);
         const items = (cam.items || []).slice().sort((a, b) => Date.parse(b.start) - Date.parse(a.start));
         if (!items.length) {
           const empty = document.createElement('p');
           empty.className = 'arch-day';
-          empty.textContent = cam.error ? 'No se pudo leer este canal.' : 'Sin grabaciones en el disco.';
+          empty.textContent = cam.error ? 'This channel could not be read.' : 'No recordings on disk.';
           frag.appendChild(empty);
           continue;
         }
@@ -2166,26 +2229,26 @@
         }
       }
       archList.appendChild(frag);
-      const span = oldest != null ? (' Del ' + fmtAt(oldest) + ' al ' + fmtAt(newest) + '.') : '';
+      const span = oldest != null ? (' From ' + fmtAt(oldest) + ' to ' + fmtAt(newest) + '.') : '';
       const total = Number(data.count) || 0;
       archStatus.textContent = total
-        ? total + ' grabaciones en el DVR.' + span
-        : 'El DVR no tiene grabaciones en el disco.';
+        ? total + ' recordings on the recorder.' + span
+        : 'The recorder has no recordings on disk.';
     }
     async function openArchive(fresh) {
       if (document.body.classList.contains('ios-large')) setIosLarge(false);
       if (!archDlg.open) archDlg.showModal();
-      archStatus.textContent = 'Buscando las grabaciones de las cámaras…';
+      archStatus.textContent = 'Looking up recordings…';
       archList.innerHTML = '';
       try {
         const r = await fetch('/api/recordings/archive' + (fresh ? '?fresh=1' : ''), { cache: 'no-store' });
         const j = await r.json();
         if (!archDlg.open) return;
-        if (!r.ok) throw new Error(j.detail || 'No se pudo leer el archivo.');
+        if (!r.ok) throw new Error(j.detail || 'The archive could not be read.');
         renderArchive(j);
       } catch (err) {
         if (!archDlg.open) return;
-        archStatus.textContent = (err && err.message) ? err.message : 'No se pudo leer el archivo.';
+        archStatus.textContent = (err && err.message) ? err.message : 'The archive could not be read.';
       }
     }
     async function openArchClip(cam, item, day) {
@@ -2205,13 +2268,13 @@
       recSpan = 1;
       document.querySelectorAll('#recSpan button').forEach(b => b.classList.toggle('on', Number(b.dataset.days) === 1));
       const known = streamCams.find(c => dvrChannel(c) === cam);
-      title.textContent = known ? known.name : 'Grabación';
-      subtitle.textContent = 'Grabación · HD';
+      title.textContent = known ? known.name : 'Recording';
+      subtitle.textContent = 'Recording · HD';
       renderRecChips();
       try {
         await loadRec(Date.parse(item.start));
       } catch (_) {
-        recStatus.textContent = 'No se pudo consultar el DVR.';
+        recStatus.textContent = 'The recorder could not be reached.';
       }
     }
     document.getElementById('archOpen').addEventListener('click', () => { openArchive(false); });

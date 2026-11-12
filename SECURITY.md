@@ -1,30 +1,42 @@
-# Seguridad
+# Security
 
-Un fallo que no deba verse en público se informa en la pestaña Security del repositorio. No abras un issue público con contraseñas, URLs RTSP ni un volcado de configuración.
+Report a flaw that should not be public in the Security tab of the repository. Do not open a public issue with passwords, RTSP URLs, or a configuration dump.
 
-## Qué no debe salir del equipo
+## What must stay on the machine
 
-- El archivo `.env`.
-- `config/cameras.json` y `config/go2rtc.yaml` cuando ya tengan nombres reales o contraseñas.
-- Cualquier URL RTSP que lleve usuario y contraseña.
-- Claves privadas, tokens de un webhook y copias de video.
+- The `.env` file.
+- `config/cameras.json` and `config/go2rtc.yaml` once they hold real names or passwords.
+- Any RTSP URL that carries a user and a password.
+- Private keys, webhook tokens, and copies of video.
 
-La aplicación no trae usuario ni contraseña por defecto. Si faltan `DVR_HOST`, `DVR_USER` o `DVR_PASS`, no arranca. `VISOR_DEMO=1` solo sirve para ver la página.
+The application ships no default user and no default password. If `DVR_HOST`, `DVR_USER`, or `DVR_PASS` is missing, it does not start. `VISOR_DEMO=1` only opens the page.
 
-## Red
+## Network
 
-go2rtc no autentica su API. Quien llegue al puerto 1984 puede pedir video y, en algunos listados, ver la URL de origen con la contraseña. Por eso el compose publica 1984 y 8555 solo en 127.0.0.1, y no publica el RTSP 8554.
+go2rtc does not authenticate its API. Anyone who can reach port 1984 can request video and, in some listings, see the source URL with the password. Compose therefore publishes 1984 and 8555 only on 127.0.0.1, and does not publish RTSP 8554.
 
-En un servidor sin Docker, `api.listen` y `webrtc.listen` tienen que ser `127.0.0.1` antes de arrancar. Para un teléfono de tu LAN, publica esos dos puertos en la dirección de la LAN. No los abras hacia internet y no des a la red de invitados una ruta hasta el grabador.
+On a server without Docker, `api.listen` and `webrtc.listen` have to be `127.0.0.1` before the process starts. For a phone on your LAN, publish those two ports on the LAN address. Do not open them to the internet, and do not give a guest network a route to the recorder.
 
-El navegador habla con go2rtc directo. Un proxy solo delante del puerto 8090 no tapa el 1984.
+The browser talks to go2rtc directly. A proxy in front of port 8090 alone does not cover 1984. The page also needs 8555 for WebRTC. Publishing only 8090 leaves the picture unable to connect, and publishing 1984 or 8555 on a public address exposes the API.
 
-## Proceso
+## Remote access
 
-El unit de systemd corre con usuario de sistema, `NoNewPrivileges`, `PrivateTmp` y el sistema de archivos en solo lectura salvo el directorio de la página y `/var/backups`. El archivo de entorno queda `root:visor` modo 640.
+Reach the viewer through Tailscale, or through the VPN you already operate. Do not put 8090, 1984, 8555, or 8554 on a public IP.
 
-Los errores que vuelven al navegador pasan por un filtro que quita `usuario:contraseña@` de la URL. Aun así, no reenvíes el log a un sitio público.
+Put the viewer host in a DMZ. The browser may reach the viewer. The viewer may reach the recorder on the recorder's own ports. A guest, and the rest of the LAN, must not reach the recorder. The recorder must not be reachable from the VPN client except through the viewer.
 
-## Informe
+## Egress
 
-`deploy_report.py` cuenta cámaras `analog` e `ip`. No lee el yaml de go2rtc y no incluye nombres de stream. El envío queda apagado hasta que existan `VISOR_REPORT_WEBHOOK`, `VISOR_REPORT_TOKEN` y `VISOR_REPORT_TO`.
+Allow the viewer and the recorder to leave the network only for what they need to stay correct: DNS, NTP, and the updates you choose to install. Do not give the video path a route to the internet. A camera or a recorder that can open arbitrary outbound connections can leak a picture. Deny that egress, and do not add a NAT rule that would create it.
+
+These are deployment choices for the operator. This repository does not ship firewall rules for a particular site.
+
+## Process
+
+The systemd unit runs as a system user, with `NoNewPrivileges`, `PrivateTmp`, and a read-only filesystem except the page directory and `/var/backups`. The environment file is `root:visor` mode 640.
+
+Errors that return to the browser pass through a filter that strips `user:password@` from a URL. Even so, do not forward the log to a public site.
+
+## Report
+
+`deploy_report.py` counts `analog` and `ip` cameras. It does not read the go2rtc yaml and it does not include stream names. Sending stays off until `VISOR_REPORT_WEBHOOK`, `VISOR_REPORT_TOKEN`, and `VISOR_REPORT_TO` are all set.

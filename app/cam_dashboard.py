@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Visor: página y API de un grabador propio. Sin nube de terceros.
+"""Visor: page and API for your own recorder. No third-party cloud.
 
-La vista en vivo sale por go2rtc (cualquier RTSP). La búsqueda y la
-descarga usan ISAPI de Hikvision. Otra marca necesita otro adaptador.
+Live view goes through go2rtc (any RTSP). Search and download use
+Hikvision ISAPI. Another brand needs another adapter.
 """
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ def _bounded_int(name: str, default: int, lo: int, hi: int) -> int:
     return min(hi, max(lo, n))
 
 
-# 8 cubre el grabador de 8 canales ya probado. Sube VISOR_CHANNELS en uno más grande.
+# 8 matches the 8-channel recorder already tested. Raise VISOR_CHANNELS on a larger one.
 MAX_CAM = _bounded_int("VISOR_CHANNELS", 8, 1, 64)
 GO2RTC_YAML = Path(os.environ.get("GO2RTC_YAML", "/etc/go2rtc/go2rtc.yaml"))
 
@@ -78,7 +78,7 @@ _offset_cache = {"at": 0.0, "offset": timedelta(hours=-5), "basis": "localz"}
 
 def dvr_opener():
     if not DVR or not DVR_USER or not DVR_PASS:
-        raise RuntimeError("sin credencial")
+        raise RuntimeError("missing credential")
     pm = HTTPPasswordMgrWithDefaultRealm()
     pm.add_password(None, f"http://{DVR}", DVR_USER, DVR_PASS)
     return build_opener(HTTPDigestAuthHandler(pm), HTTPBasicAuthHandler(pm))
@@ -93,10 +93,10 @@ def dvr_req(path: str, method: str = "GET", data: bytes | None = None, timeout: 
 
 
 def dvr_admin_req(path: str, method: str = "GET", data: bytes | None = None, timeout: int = 15):
-    # En este firmware el permiso del operador responde OK y no se guarda.
-    # La escritura ISAPI va con el usuario admin y la misma contraseña.
+    # On this firmware an operator permission answers OK and is not stored.
+    # The ISAPI write uses the admin user and the same password.
     if not DVR or not DVR_PASS:
-        raise RuntimeError("sin credencial")
+        raise RuntimeError("missing credential")
     pm = HTTPPasswordMgrWithDefaultRealm()
     pm.add_password(None, f"http://{DVR}", "admin", DVR_PASS)
     opener = build_opener(HTTPDigestAuthHandler(pm), HTTPBasicAuthHandler(pm))
@@ -241,7 +241,7 @@ def ensure_ip_cameras(items: list[dict]) -> None:
             cameras.append(
                 {
                     "id": f"ip{proxy_id:02d}",
-                    "name": f"Cámara IP {proxy_id:02d}",
+                    "name": f"IP camera {proxy_id:02d}",
                     "type": "stream",
                     "kind": "ip",
                     "channel": channel,
@@ -524,7 +524,7 @@ def search_recordings(track_id: int, start: datetime, end: datetime, limit: int 
 
 _archive_lock = threading.Lock()
 _archive_cache: dict = {"at": 0.0, "key": 0, "body": None}
-# 120 días alcanza lo que este DVR todavía conserva; el disco reescribe lo anterior.
+# 120 days covers what this recorder still keeps; the disk overwrites older clips.
 _ARCHIVE_DAYS = 120
 
 
@@ -794,11 +794,11 @@ def _watch_add(job: dict, path: str) -> None:
 def _export_detail(exc: BaseException) -> str:
     code = str(exc)
     if code == "tiempo":
-        return "El DVR tardó demasiado en ese tramo."
+        return "The recorder took too long on that span."
     if code == "duracion":
-        return "La duración del archivo no coincidió con ese tramo."
+        return "The file duration did not match that span."
     print("export", public_err(exc), flush=True)
-    return "No se pudo armar el archivo de ese tramo."
+    return "The file for that span could not be built."
 
 
 def _export_snapshot(token: str) -> dict | None:
@@ -1112,7 +1112,7 @@ def _write_part_http(plan: dict, dest: Path, title: str, job: dict | None) -> No
         raw.unlink(missing_ok=True)
     if not _part_ok(dest, float(plan["dur"])):
         dest.unlink(missing_ok=True)
-        raise RuntimeError("recorte")
+        raise RuntimeError("trim")
 
 
 def _ffmpeg_copy(plan: dict, dest: Path, title: str, readrate: str | None, timeout: float) -> None:
@@ -1138,7 +1138,7 @@ def _ffmpeg_copy(plan: dict, dest: Path, title: str, readrate: str | None, timeo
     _code, err = _run_ffmpeg(cmd, timeout)
     if not _part_ok(dest, dur):
         dest.unlink(missing_ok=True)
-        raise RuntimeError(err or "recorte")
+        raise RuntimeError(err or "trim")
 
 
 def _write_part_scale(plan: dict, dest: Path, title: str) -> None:
@@ -1358,7 +1358,7 @@ def _write_part_scale(plan: dict, dest: Path, title: str) -> None:
             raise RuntimeError("tiempo")
         if not _part_ok(dest, dur):
             dest.unlink(missing_ok=True)
-            raise RuntimeError(public_err(Exception(err.decode("utf-8", "replace")[-180:])) or "recorte")
+            raise RuntimeError(public_err(Exception(err.decode("utf-8", "replace")[-180:])) or "trim")
     finally:
         srv.close()
         if proc.poll() is None:
@@ -1631,27 +1631,27 @@ class Handler(SimpleHTTPRequestHandler):
             start = q.get("start", [""])[0]
             end = q.get("end", [""])[0]
         except ValueError:
-            return self._json(400, {"error": "params", "detail": "Cámara no válida."})
+            return self._json(400, {"error": "params", "detail": "Invalid camera."})
         if cam < 1 or cam > MAX_CAM or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", start):
-            return self._json(400, {"error": "params", "detail": "Elige cámara, inicio y fin."})
+            return self._json(400, {"error": "params", "detail": "Choose a camera, a start, and an end."})
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", end):
-            return self._json(400, {"error": "params", "detail": "Elige la hora final."})
+            return self._json(400, {"error": "params", "detail": "Choose the end time."})
         try:
             plans, win_s, win_e, span = export_plan(cam, start, end)
         except ValueError as e:
             code = str(e)
             if code == "long":
-                return self._json(400, {"error": "range", "detail": "El máximo para descargar es 4 horas."})
+                return self._json(400, {"error": "range", "detail": "The longest download is 4 hours."})
             if code == "short":
-                return self._json(400, {"error": "range", "detail": "Elige al menos un minuto."})
+                return self._json(400, {"error": "range", "detail": "Choose at least one minute."})
             if code == "order":
-                return self._json(400, {"error": "range", "detail": "La hora final tiene que ser después del inicio."})
-            return self._json(400, {"error": "params", "detail": "No se pudo leer ese tramo."})
+                return self._json(400, {"error": "range", "detail": "The end time has to be after the start."})
+            return self._json(400, {"error": "params", "detail": "That span could not be read."})
         except (HTTPError, URLError, OSError, ET.ParseError) as e:
-            return self._json(502, {"error": "dvr", "detail": "El DVR no respondió la búsqueda."})
+            return self._json(502, {"error": "dvr", "detail": "The recorder did not answer the search."})
         plans = [plan for plan in plans if float(plan["dur"]) >= 1]
         if not plans:
-            return self._json(404, {"error": "gap", "detail": "No hay grabación en ese tramo."})
+            return self._json(404, {"error": "gap", "detail": "No recording in that span."})
         recorded, nbytes = _export_estimate(plans)
         fits, free = _export_room(nbytes, len(plans))
         if not fits:
@@ -1661,7 +1661,7 @@ class Handler(SimpleHTTPRequestHandler):
                 507,
                 {
                     "error": "disk",
-                    "detail": f"Ese tramo pesa unos {weight} MB y en el visor quedan {free_mb} MB. Elige un tramo más corto.",
+                    "detail": f"That span is about {weight} MB and the viewer has {free_mb} MB free. Choose a shorter span.",
                     "seconds": recorded,
                     "bytes": nbytes,
                 },
@@ -1681,33 +1681,33 @@ class Handler(SimpleHTTPRequestHandler):
                 },
             )
         if q.get("build", ["0"])[0] != "1":
-            return self._json(400, {"error": "params", "detail": "Usa el botón Descargar."})
+            return self._json(400, {"error": "params", "detail": "Use the Download button."})
         try:
             job = _start_export(plans, win_s, win_e, cam, recorded, nbytes)
         except RuntimeError:
-            return self._json(409, {"error": "busy", "detail": "Ya hay una descarga en curso."})
+            return self._json(409, {"error": "busy", "detail": "A download is already running."})
         snap = _export_snapshot(job["token"]) or {"ok": True, "state": "building", "token": job["token"]}
         return self._json(200, snap)
 
     def _export_progress(self, token: str):
         if not re.fullmatch(r"[0-9a-f]{32}", token):
-            return self._json(400, {"error": "file", "state": "error", "detail": "Esa descarga no es válida."})
+            return self._json(400, {"error": "file", "state": "error", "detail": "That download is not valid."})
         snap = _export_snapshot(token)
         if not snap:
-            return self._json(404, {"error": "file", "state": "error", "detail": "Esa descarga ya no está. Pídela otra vez."})
+            return self._json(404, {"error": "file", "state": "error", "detail": "That download is gone. Ask for it again."})
         return self._json(200, snap)
 
     def _export_file(self, token: str):
         if not re.fullmatch(r"[0-9a-f]{32}", token):
-            return self._json(400, {"error": "file", "detail": "Esa descarga no es válida."})
+            return self._json(400, {"error": "file", "detail": "That download is not valid."})
         item = _export_ready.get(token)
         path = Path(item["path"]) if item and item.get("path") else None
         if item and item.get("state") == "building":
-            return self._json(409, {"error": "busy", "detail": "El archivo todavía se está preparando."})
+            return self._json(409, {"error": "busy", "detail": "The file is still being prepared."})
         if item and item.get("state") == "error":
-            return self._json(502, {"error": "export", "detail": item.get("detail") or "No se pudo armar el archivo de ese tramo."})
+            return self._json(502, {"error": "export", "detail": item.get("detail") or "The file for that span could not be built."})
         if path is None or not path.exists():
-            return self._json(404, {"error": "file", "detail": "Esa descarga ya no está. Pídela otra vez."})
+            return self._json(404, {"error": "file", "detail": "That download is gone. Ask for it again."})
         _job_update(item, at=time.time())
         try:
             self.send_response(200)
@@ -1737,7 +1737,7 @@ class Handler(SimpleHTTPRequestHandler):
                 cam * 100 + 1, start, offset, basis
             )
         except ValueError:
-            return self._json(404, {"error": "gap", "detail": "No hay grabación en ese punto."})
+            return self._json(404, {"error": "gap", "detail": "No recording at that point."})
         except (HTTPError, URLError, OSError, ET.ParseError) as e:
             return self._json(502, {"error": "dvr", "detail": public_err(e)})
         try:
@@ -1767,8 +1767,8 @@ def main():
     demo = os.environ.get("VISOR_DEMO", "") == "1"
     if not demo and not (DVR and DVR_USER and DVR_PASS):
         raise SystemExit(
-            "Faltan DVR_HOST, DVR_USER y DVR_PASS. "
-            "Definelas en el entorno, o arranca con VISOR_DEMO=1 para abrir la página sin grabador."
+            "DVR_HOST, DVR_USER, and DVR_PASS are missing. "
+            "Set them in the environment, or start with VISOR_DEMO=1 to open the page without a recorder."
         )
     ROOT.mkdir(parents=True, exist_ok=True)
     if not demo:

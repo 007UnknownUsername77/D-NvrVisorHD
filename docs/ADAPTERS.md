@@ -1,41 +1,41 @@
-# Adaptadores
+# Adapters
 
-Visor separa dos cosas.
+Visor separates two jobs.
 
-## Vista en vivo
+## Live view
 
-go2rtc abre la URL RTSP que declares. Sirve para una cámara IP sola, para el canal de una cámara analógica que el grabador ya digitalizó, y para la cámara IP que el grabador republica. La página no habla con la cámara. Habla con go2rtc.
+go2rtc opens the RTSP URL you declare. That covers a standalone IP camera, an analog camera the recorder has already digitized, and an IP camera the recorder republishes. The page does not talk to the camera. It talks to go2rtc.
 
-El catálogo (`cameras.json`) dice el nombre del stream, no la URL. La URL vive solo en `go2rtc.yaml`.
+The catalog (`cameras.json`) names the stream. The URL lives only in `go2rtc.yaml`.
 
-`kind` es `analog` o `ip`. Sirve para el informe de despliegue y para que quien despliega deje escrito qué tiene. La página no cambia el códec por ese campo.
+`kind` is `analog` or `ip`. It is for the deployment report and so the operator can record what they have. The page does not pick a codec from that field.
 
-- `analog`: canal del grabador que entra por coaxial o por la entrada de video. El visor no se conecta al cable. Usa el canal que el grabador expone.
-- `ip`: cámara de red. Puede estar en el proxy del grabador (entonces tiene `channel` y hay archivo) o ser una URL RTSP suelta. Sin `channel` se ve en vivo y no entra en Grabación.
+- `analog`: a recorder channel that enters on coax or a video input. The viewer does not connect to the cable. It uses the channel the recorder exposes.
+- `ip`: a network camera. It can sit on the recorder proxy (then it has `channel` and an archive) or be a bare RTSP URL. Without `channel` it is live only and does not enter Recording.
 
-`dar` es la relación de aspecto de verdad, por ejemplo `[16, 9]`. No la pongas para estirar una cámara que no es panorámica. Sin `dar`, la página usa los píxeles del fotograma.
+`dar` is the real aspect ratio, for example `[16, 9]`. Do not set it to stretch a camera that is not wide. Without `dar`, the page uses the pixels of the frame.
 
-`stream_main` tiene que terminar en `_main`. La página pide el HD con el mismo nombre acabado en `_hd`. Ese HD es H.264 de rango limitado, una cámara a la vez. El mosaico y la tele se quedan en `stream_sub`.
+`stream_main` has to end in `_main`. The page asks for HD with the same name ending in `_hd`. That HD is limited-range H.264, one camera at a time. The mosaic and the TV stay on `stream_sub`.
 
-## Grabaciones
+## Recordings
 
-Hoy el adaptador es ISAPI de Hikvision, en `app/cam_dashboard.py`. Cubre los canales analógicos y las cámaras IP que ese grabador indexa. No cubre Dahua, Uniview ni un NVR genérico. Decir lo contrario sería mentir.
+Today the adapter is Hikvision ISAPI, in `app/cam_dashboard.py`. It covers analog channels and IP cameras that recorder indexes. It does not cover Dahua, Uniview, or a generic NVR.
 
-Un segundo fabricante es un módulo nuevo con las mismas piezas:
+A second manufacturer is a new module with the same pieces:
 
-- buscar segmentos de un canal entre dos horas
-- resolver el archivo que contiene un instante (nombre, tamaño y fin de ese archivo)
-- entregar la URL RTSP de reproducción de ese archivo, o el equivalente que go2rtc pueda leer
-- activar o pausar la pista de grabación cuando el canal tiene imagen o la pierde
+- search the segments of one channel between two times
+- resolve the file that contains an instant (that file's name, size, and end)
+- hand back the RTSP playback URL of that file, or the equivalent go2rtc can read
+- enable or pause the recording track when the channel gains or loses a picture
 
-La página sigue llamando a `/api/recordings`, `/api/recordings/archive`, `/api/recordings/export` y `/api/recordings/play`. No hace falta duplicar la interfaz.
+The page keeps calling `/api/recordings`, `/api/recordings/archive`, `/api/recordings/export`, and `/api/recordings/play`. The interface does not need a second copy.
 
-`VISOR_CHANNELS` es el máximo de canal que se consulta. El valor por defecto es 8. En un grabador de más canales se sube, hasta 64. Consultar canales vacíos alarga el archivo.
+`VISOR_CHANNELS` is the highest channel that is queried. The default is 8. On a recorder with more channels, raise it, up to 64. Querying empty channels makes the archive slower.
 
-La escritura de pistas en este firmware de Hikvision no acepta el XML completo. La app cambia `Enable` y quita los campos de solo lectura. El usuario operador puede responder OK y no guardar; la escritura usa `admin` con la misma contraseña del entorno.
+Track writes on this Hikvision firmware do not accept the full XML. The app changes `Enable` and strips the read-only fields. An operator user can answer OK and not store the change; the write uses `admin` with the same password from the environment.
 
-## Qué no es una nube de terceros
+## Not a third-party cloud
 
-El video de archivo sigue en el disco del grabador. Visor no lo sube a Hik-Connect, EZVIZ ni a otro servicio. La descarga prepara un MP4 en el host y el navegador lo guarda en el equipo. Esa es la nube propia: tu grabador y tu servidor.
+Archived video stays on the recorder disk. Visor does not upload it to Hik-Connect, EZVIZ, or another service. A download prepares an MP4 on the host and the browser saves it on the device. That is the private copy: your recorder and your server.
 
-El primer fotograma HD puede salir gris un instante. go2rtc 1.9.9, al pedir solo video, antepone un filtro de demux. La plantilla `rtsp/hd` no usa `low_delay`; con HEVC de rango completo ese flag deja el gris fijo. La imagen se aclara en el fotograma siguiente.
+The first HD frame can be gray for a moment. go2rtc 1.9.9, when it asks for video only, prepends a demux filter. The `rtsp/hd` template does not use `low_delay`; with full-range HEVC that flag leaves the gray in place. The picture clears on the next frame.
