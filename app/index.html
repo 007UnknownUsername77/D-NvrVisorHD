@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="theme-color" content="#07080c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="apple-mobile-web-app-title" content="Visor" />
+  <title>Visor</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07080c;
+      --panel: #10131b;
+      --card: #171b26;
+      --line: rgba(255,255,255,.08);
+      --text: #eef1f7;
+      --muted: #8e98ad;
+      --accent: #4c8dff;
+      --accent-2: #9ec0ff;
+      --rec: #ff6436;
+      --live: #3ee0a2;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --nav: calc(58px + env(safe-area-inset-bottom));
+      --top: calc(50px + env(safe-area-inset-top));
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%; background: var(--bg); color: var(--text);
+      font-family: var(--font); overflow: hidden; user-select: none;
+      touch-action: manipulation; -webkit-touch-callout: none;
+      overscroll-behavior: none;
+    }
+    body.phone .app { height: var(--app-h, 100dvh); }
+    button, input { font: inherit; color: inherit; }
+    .app { height: 100dvh; display: flex; flex-direction: column; }
+    header {
+      height: var(--top); padding: env(safe-area-inset-top) 14px 0;
+      display: flex; align-items: center; gap: 10px; flex: none;
+    }
+    header .mark {
+      width: 28px; height: 28px; border-radius: 8px; flex: none;
+      background: linear-gradient(160deg, #2a3348, #121722);
+      border: 1px solid var(--line);
+      display: grid; place-items: center;
+    }
+    header .mark svg { width: 16px; height: 16px; }
+    header .titles { min-width: 0; flex: 1; }
+    header strong { display: block; font-size: 16px; font-weight: 650; letter-spacing: -.02em; }
+    header span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    header .clock { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+    .view { flex: 1; min-height: 0; display: none; flex-direction: column; }
+    body[data-mode="live"] #liveView,
+    body[data-mode="rec"] #recView { display: flex; }
+
+    .stage-wrap { flex: 1; min-height: 0; padding: 0 8px; position: relative; }
+    .stage {
+      height: 100%; background: #000; border-radius: 16px; overflow: hidden;
+      position: relative; border: 1px solid var(--line); touch-action: none;
+    }
+    .stage.one { display: block; }
+    .stage.grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: minmax(0, 1fr);
+      gap: 3px; background: #000; padding: 3px;
+    }
+    .cell { position: relative; width: 100%; height: 100%; background: #05060a; min-height: 0; overflow: hidden; }
+    .stage.grid .cell { border-radius: 10px; }
+    .stage.grid .cell.on { outline: 2px solid var(--accent-2); outline-offset: -2px; }
+    .stage.grid .tag { left: 6px; top: 6px; padding: 2px 6px; font-size: 11px; }
+    .cell video-stream, .cell video, .rec-player video-stream, .rec-player video {
+      width: 100% !important; height: 100% !important; display: block; background: #000;
+      object-fit: contain;
+    }
+    .cell[data-dar], .rec-player[data-dar] {
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cell[data-dar] > video-stream, .rec-player[data-dar] > video-stream { flex: none; }
+    .cell[data-dar] video, .rec-player[data-dar] video { object-fit: fill; }
+    @media (max-width: 800px) {
+      .btn, .chip, .span-row button { height: 44px; }
+    }
+    body.ios-large { background: #000; }
+    body.phone .stage-wrap,
+    body.phone .rec-player {
+      transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    body.phone header,
+    body.phone .film,
+    body.phone .tools,
+    body.phone nav,
+    body.phone .rec-head,
+    body.phone .timeline,
+    body.phone .clips,
+    body.phone .dl-box,
+    body.phone .rec-status {
+      transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    body.ios-large header,
+    body.ios-large .film,
+    body.ios-large .tools,
+    body.ios-large nav,
+    body.ios-large .rec-head,
+    body.ios-large .timeline,
+    body.ios-large .clips,
+    body.ios-large .dl-box,
+    body.ios-large .rec-status {
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.ios-large .stage-wrap,
+    body.ios-large .rec-player {
+      position: fixed; z-index: 30; margin: 0; border-radius: 0;
+      background: #000; box-sizing: border-box;
+      padding:
+        env(safe-area-inset-top)
+        env(safe-area-inset-right)
+        env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
+      opacity: 1;
+      transform: translateZ(0) scale(1);
+      transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    body.ios-large.ios-enter .stage-wrap,
+    body.ios-large.ios-enter .rec-player,
+    body.ios-large.ios-leave .stage-wrap,
+    body.ios-large.ios-leave .rec-player {
+      opacity: 0;
+      transform: translateZ(0) scale(0.975);
+    }
+    body.ios-large .stage { height: 100%; border: 0; border-radius: 0; }
+    .ios-close {
+      position: fixed; z-index: 80;
+      top: calc(8px + env(safe-area-inset-top));
+      left: calc(8px + env(safe-area-inset-left));
+      width: 44px; height: 44px; margin: 0; padding: 0;
+      border: 0; border-radius: 22px;
+      background: rgba(20,22,28,.78); color: #fff;
+      font-size: 30px; line-height: 1; font-weight: 300;
+      display: grid; place-items: center;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateZ(0) scale(0.92);
+      transition: opacity 180ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 180ms;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .ios-close::before {
+      content: "";
+      position: absolute;
+      inset: -12px;
+    }
+    body.ios-large:not(.ios-enter):not(.ios-leave) .ios-close {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateZ(0) scale(1);
+      transition: opacity 200ms ease 30ms, transform 240ms cubic-bezier(0.22, 1, 0.36, 1) 30ms, visibility 0s linear 0s;
+    }
+    body.ios-large:not(.ios-enter):not(.ios-leave) .ios-close:active {
+      transform: translateZ(0) scale(0.9);
+      background: rgba(255,255,255,.18);
+    }
+    body.phone video::-webkit-media-controls,
+    body.phone video::-webkit-media-controls-start-playback-button,
+    body.phone video::-webkit-media-controls-overlay-play-button {
+      display: none !important;
+      -webkit-appearance: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body.phone header,
+      body.phone .film,
+      body.phone .tools,
+      body.phone nav,
+      body.phone .rec-head,
+      body.phone .timeline,
+      body.phone .clips,
+      body.phone .dl-box,
+      body.phone .rec-status,
+      body.phone .stage-wrap,
+      body.phone .rec-player,
+      body.ios-large .stage-wrap,
+      body.ios-large .rec-player,
+      .ios-close { transition: none; }
+      .dl-progress.wait .dl-progress-bar { animation: none; width: 100%; opacity: .45; }
+    }
+    .cell .tag, .hud-name {
+      position: absolute; z-index: 2; left: 10px; top: 10px;
+      background: rgba(0,0,0,.55);
+      border-radius: 999px; padding: 4px 8px; font-size: 12px;
+      display: flex; gap: 6px; align-items: center;
+    }
+    body.tv button:focus, body.tv .stage:focus {
+      outline: 3px solid var(--accent-2); outline-offset: 2px;
+    }
+    body.tv .btn, body.tv .chip, body.tv .shot { min-height: 48px; }
+    body.tv .shot { width: 132px; }
+    body.tv .thumb { height: 72px; display: grid; place-items: center; font-size: 18px; font-weight: 700; }
+    .cell .tag b, .pill {
+      font-size: 10px; font-weight: 700; letter-spacing: .04em;
+      color: #04130c; background: var(--live); border-radius: 999px; padding: 1px 6px;
+    }
+    .pill.sub { background: #c9d4ea; color: #121722; }
+    .empty {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: var(--muted); font-size: 14px; text-align: center; padding: 20px;
+    }
+
+    .film, .tools, .chips, .span-row {
+      display: flex; gap: 8px; overflow-x: auto; padding: 8px 12px 4px;
+      scrollbar-width: none; flex: none;
+    }
+    .film::-webkit-scrollbar, .tools::-webkit-scrollbar, .chips::-webkit-scrollbar { display: none; }
+    .shot {
+      flex: 0 0 auto; width: 92px; border: 0; padding: 0; background: transparent; text-align: left; color: var(--muted);
+    }
+    .shot .thumb {
+      height: 54px; border-radius: 10px; background: #0c0e14 center/cover no-repeat;
+      border: 2px solid transparent; overflow: hidden;
+    }
+    .shot.on { color: var(--text); }
+    .shot.on .thumb { border-color: var(--accent); }
+    .shot small { display: block; margin-top: 4px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .tools { padding-top: 4px; padding-bottom: 8px; align-items: center; }
+    .btn {
+      flex: 0 0 auto; height: 36px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer;
+    }
+    .btn.on { background: #1c305c; border-color: #3d6ec9; color: var(--accent-2); }
+    .hint { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+    .rec-head { flex: none; padding-bottom: 4px; }
+    .chips { padding-bottom: 0; }
+    .chip, .span-row button {
+      flex: 0 0 auto; height: 34px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer;
+    }
+    .chip.on, .span-row button.on { color: var(--text); border-color: #3d6ec9; background: #1c305c; }
+    .rec-controls { display: flex; gap: 8px; align-items: center; padding: 6px 12px 0; flex: none; flex-wrap: wrap; }
+    .rec-controls input[type="date"] {
+      height: 34px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--card); padding: 0 10px; color-scheme: dark;
+    }
+    .rec-player {
+      flex: 1; min-height: 120px; margin: 8px 8px 0; border-radius: 16px; overflow: hidden;
+      background: #000; position: relative; border: 1px solid var(--line); touch-action: none;
+    }
+    .zoom-ctl {
+      position: absolute; z-index: 6; top: 8px; right: 8px;
+      display: flex; gap: 6px;
+    }
+    .stage.grid ~ .zoom-ctl { display: none; }
+    .zoom-ctl button {
+      width: 44px; height: 44px; margin: 0; padding: 0; border: 0; border-radius: 22px;
+      background: rgba(20, 22, 28, .78); color: #fff; font-size: 22px; line-height: 1;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    body.ios-large .zoom-ctl {
+      top: calc(8px + env(safe-area-inset-top));
+      right: calc(8px + env(safe-area-inset-right));
+    }
+    body.tv .zoom-ctl button { width: 48px; height: 48px; font-size: 24px; }
+    .stage video-stream, .rec-player video-stream { transform-origin: center center; }
+    .live-fs, .rec-fs { position: absolute; z-index: 7; right: 8px; bottom: 8px; }
+    body.ios-large .live-fs,
+    body.ios-large .rec-fs {
+      right: calc(8px + env(safe-area-inset-right));
+      bottom: calc(8px + env(safe-area-inset-bottom));
+      opacity: 1; pointer-events: auto;
+    }
+    .rec-skip {
+      position: absolute; z-index: 6; left: 8px; bottom: 8px;
+      display: flex; gap: 8px;
+    }
+    .rec-skip .btn { height: 44px; min-width: 72px; padding: 0 14px; }
+    body.ios-large .rec-skip {
+      left: calc(8px + env(safe-area-inset-left));
+      bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+    .rec-status { flex: none; color: var(--muted); font-size: 12px; padding: 6px 14px 0; min-height: 18px; }
+    #dlSave { display: inline-flex; align-items: center; text-decoration: none; }
+    .dl-progress {
+      flex: none; height: 10px; margin: 8px 14px 0; border-radius: 999px;
+      background: #12151d; border: 1px solid var(--line); overflow: hidden;
+    }
+    .dl-progress-bar {
+      height: 100%; width: 0; border-radius: inherit; background: #3d6ec9;
+    }
+    .dl-progress.wait .dl-progress-bar {
+      width: 40%; animation: dl-wait 1.1s ease-in-out infinite;
+    }
+    @keyframes dl-wait {
+      from { transform: translateX(-110%); }
+      to { transform: translateX(280%); }
+    }
+    .dl-box {
+      flex: none; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      padding: 6px 12px 0;
+    }
+    .dl-box label {
+      display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px;
+    }
+    .dl-box input[type="date"], .dl-box input[type="time"] {
+      height: 34px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--card); padding: 0 8px; color-scheme: dark;
+    }
+    body.tv .dl-box input { min-height: 48px; }
+
+    .timeline { flex: none; padding: 4px 14px 8px; }
+    .tl-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+    .tl-bar {
+      position: relative; height: 44px; border-radius: 12px; background: #12151d;
+      border: 1px solid var(--line); touch-action: none; cursor: pointer;
+    }
+    .tl-seg {
+      position: absolute; top: 14px; height: 16px; border-radius: 4px;
+      background: linear-gradient(90deg, #ff7a4a, var(--rec)); min-width: 2px;
+    }
+    .tl-play {
+      position: absolute; top: 0; bottom: 0; width: 2px; background: #fff;
+      transform: translateX(-1px); pointer-events: none;
+    }
+    .tl-play::after {
+      content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px;
+      border-radius: 50%; background: #fff; transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 4px rgba(76,141,255,.35);
+    }
+    .tl-bubble {
+      position: absolute; top: -22px; transform: translateX(-50%);
+      background: #fff; color: #111; font-size: 11px; font-weight: 650;
+      border-radius: 999px; padding: 2px 7px; pointer-events: none; white-space: nowrap;
+    }
+    .tl-labels { position: relative; height: 16px; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .tl-labels span { position: absolute; transform: translateX(-50%); }
+
+    .clips {
+      flex: none; max-height: 22vh; overflow: auto; margin: 0; padding: 0 8px 8px;
+      list-style: none;
+    }
+    .clips li {
+      display: flex; justify-content: space-between; gap: 8px;
+      padding: 10px 10px; margin: 0 4px 6px; border-radius: 12px;
+      background: var(--card); color: var(--text); font-size: 13px;
+    }
+    .clips li.active { outline: 1px solid #3d6ec9; }
+    .clips li .m { color: var(--muted); font-size: 12px; }
+    .clips .rec-empty { color: var(--muted); background: transparent; }
+
+    dialog.arch {
+      width: min(640px, calc(100vw - 16px));
+      max-height: min(82dvh, 760px);
+      margin: auto; padding: 0; color: var(--text);
+      border: 1px solid var(--line); border-radius: 16px; background: #10131b;
+    }
+    dialog.arch::backdrop { background: rgba(0, 0, 0, .66); }
+    .arch-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 12px 12px 0;
+    }
+    .arch-head strong { font-size: 16px; }
+    .arch-actions { display: flex; gap: 8px; }
+    .arch-status { margin: 8px 14px 0; color: var(--muted); font-size: 12px; min-height: 18px; }
+    .arch-list { overflow: auto; max-height: calc(82dvh - 92px); padding: 8px 8px 14px; }
+    .arch-cam { margin: 12px 6px 4px; font-size: 14px; }
+    .arch-day { margin: 8px 6px 4px; color: var(--muted); font-size: 11px; }
+    .arch-row {
+      width: 100%; min-height: 44px; margin: 0 0 6px; padding: 10px 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      border: 0; border-radius: 12px; background: var(--card); color: var(--text); text-align: left;
+    }
+    .arch-row span:last-child { color: var(--muted); font-size: 12px; }
+
+    nav {
+      flex: none; height: var(--nav); padding-bottom: env(safe-area-inset-bottom);
+      display: grid; grid-template-columns: 1fr 1fr;
+      background: #0b0d13; border-top: 1px solid var(--line);
+    }
+    nav button {
+      border: 0; background: transparent; color: var(--muted); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      font-size: 11px; font-weight: 650;
+    }
+    nav button.on { color: var(--accent-2); }
+    nav svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body data-mode="live">
+  <div class="app">
+    <header>
+      <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+      <div class="titles">
+        <strong id="title">Cámaras</strong>
+        <span id="subtitle">En vivo</span>
+      </div>
+      <div class="clock" id="clock">--:--</div>
+    </header>
+
+    <section class="view" id="liveView">
+      <div class="stage-wrap">
+        <div class="stage one" id="stage" tabindex="0"></div>
+        <div class="zoom-ctl" id="liveZoom">
+          <button type="button" data-zoom="out" aria-label="Alejar">−</button>
+          <button type="button" data-zoom="in" aria-label="Acercar">+</button>
+        </div>
+        <button class="btn live-fs" id="liveFs" type="button">Pantalla</button>
+      </div>
+      <div class="film" id="film"></div>
+      <div class="tools">
+        <button class="btn on" id="btnHd" type="button">HD</button>
+        <button class="btn" id="btnGrid" type="button">Mosaico</button>
+        <button class="btn" id="btnMute" type="button">Silencio</button>
+        <button class="btn" id="btnShot" type="button">Captura</button>
+        <button class="btn" id="btnFs" type="button">Pantalla</button>
+        <span class="hint" id="liveHint">HD · 1 canal</span>
+      </div>
+    </section>
+
+    <section class="view" id="recView">
+      <div class="rec-head">
+        <div class="chips" id="recChips"></div>
+        <div class="rec-controls">
+          <input type="date" id="recDate" />
+          <div class="span-row" id="recSpan">
+            <button type="button" data-days="1">Hoy</button>
+            <button type="button" data-days="2" class="on">2 días</button>
+            <button type="button" data-days="7">7 días</button>
+          </div>
+          <button class="btn" id="recSearch" type="button">Actualizar</button>
+          <button class="btn" id="archOpen" type="button">Archivo</button>
+          <button class="btn on" id="recMute" type="button">Sonido</button>
+        </div>
+      </div>
+      <div class="rec-player" id="recPlayer">
+        <div class="empty" id="recPlaceholder">Arrastra la barra para ver esa hora</div>
+        <div class="rec-skip">
+          <button class="btn" id="recBack" type="button" aria-label="Retroceder 10 segundos" aria-keyshortcuts="ArrowLeft">−10 s</button>
+          <button class="btn" id="recFwd" type="button" aria-label="Avanzar 10 segundos" aria-keyshortcuts="ArrowRight">+10 s</button>
+        </div>
+        <button class="btn rec-fs" id="recFs" type="button">Pantalla</button>
+        <div class="zoom-ctl" id="recZoom">
+          <button type="button" data-zoom="out" aria-label="Alejar">−</button>
+          <button type="button" data-zoom="in" aria-label="Acercar">+</button>
+        </div>
+      </div>
+      <div class="rec-status" id="recStatus">La barra recorre horas y días. Calidad máxima.</div>
+      <div class="dl-box">
+        <label>Desde <input type="date" id="dlFromDate" /><input type="time" id="dlFromTime" step="1" /></label>
+        <label>Hasta <input type="date" id="dlToDate" /><input type="time" id="dlToTime" step="1" /></label>
+        <button class="btn" id="dlBtn" type="button">Descargar</button>
+        <button class="btn" id="dlHere" type="button">1 min desde aquí</button>
+        <a class="btn" id="dlSave" hidden>Guardar</a>
+      </div>
+      <div class="dl-progress" id="dlProgress" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Descarga del video">
+        <div class="dl-progress-bar" id="dlProgressBar"></div>
+      </div>
+      <div class="rec-status" id="dlStatus"></div>
+      <div class="timeline">
+        <div class="tl-top">
+          <span id="tlRange">Grabación</span>
+          <span id="tlNow">—</span>
+        </div>
+        <div class="tl-bar" id="tlBar" role="slider" aria-label="Línea de tiempo de grabación">
+          <div class="tl-play" id="tlPlay"><span class="tl-bubble" id="tlBubble">—</span></div>
+        </div>
+        <div class="tl-labels" id="tlLabels"></div>
+      </div>
+      <ul class="clips" id="clipList"></ul>
+    </section>
+
+    <button type="button" class="ios-close" id="iosClose" aria-label="Cerrar">×</button>
+    <nav>
+      <button type="button" id="tabLive" class="on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        En vivo
+      </button>
+      <button type="button" id="tabRec">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
+        Grabación
+      </button>
+    </nav>
+  </div>
+
+  <dialog class="arch" id="archDlg" aria-labelledby="archTitle">
+    <div class="arch-head">
+      <strong id="archTitle">Grabaciones en el DVR</strong>
+      <div class="arch-actions">
+        <button class="btn" id="archRefresh" type="button">Actualizar</button>
+        <button class="btn" id="archClose" type="button">Cerrar</button>
+      </div>
+    </div>
+    <p class="arch-status" id="archStatus">Buscando las grabaciones de las cámaras…</p>
+    <div class="arch-list" id="archList"></div>
+  </dialog>
+
+  <script type="module">
+    const GO2RTC = (() => {
+      // Mismo host que la página, puerto 1984. El proceso Python usa GO2RTC_URL.
+      const h = location.hostname || '127.0.0.1';
+      return `http://${h}:1984`;
+    })();
+    const ua = navigator.userAgent || '';
+    const isIOS = (() => {
+      if (/iPad|iPhone|iPod/.test(ua)) return true;
+      if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+      return false;
+    })();
+    const isTV = new URLSearchParams(location.search).get('tv') === '1'
+      || /Tizen|SMART-TV|SmartTV|Web0S|HbbTV/i.test(ua);
+    // El HEVC de rango completo sale gris o verde en Android, y la 3 y la 4
+    // además no caben en el nivel que decodifica el teléfono. La 7 sí.
+    const isAndroid = /Android/i.test(ua) && !isTV;
+    // Vista grande, X y transiciones: iPhone y Android. La tele y el escritorio
+    // siguen con la pantalla nativa. El códec de cada uno no cambia.
+    const isPhone = isIOS || isAndroid;
+    // La tele no aguanta WebRTC ni el main H.265: eso reconecta y se ve a saltos.
+    // MSE del sub H.264 no transcodifica. MJPEG solo si MSE falla.
+    const playMode = isTV ? 'mse,mjpeg' : (isIOS ? 'webrtc,hls,mse,mjpeg' : 'webrtc,mse,hls,mjpeg');
+    if (isTV) document.body.classList.add('tv');
+    if (isIOS) document.body.classList.add('ios');
+    if (isPhone) document.body.classList.add('phone');
+    const phoneQuery = window.matchMedia('(max-width: 800px)');
+
+    // Puerto Ethernet del DVR: 100 Mbps. Un main ronda 6 Mbps y además pide
+    // transcodificación. Mosaico y selector abren en sub H.264 solo canales con imagen.
+    // Cada 15 s se miden los que no están en pantalla. Si uno empieza a verse, entra solo.
+    // Una cámara nueva, del DVR o IP, es otra entrada en cameras.json. channel
+    // solo si el DVR la graba. Sin channel queda en vivo y fuera de Grabación.
+
+    await import(`${GO2RTC}/video-stream.js`);
+    const cfg = await fetch('./cameras.json', { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+    const cameras = (cfg && cfg.cameras) ? cfg.cameras : [];
+    const streamCams = cameras.filter(c => c.type === 'stream');
+
+    const stage = document.getElementById('stage');
+    const film = document.getElementById('film');
+    const title = document.getElementById('title');
+    const subtitle = document.getElementById('subtitle');
+    const liveHint = document.getElementById('liveHint');
+    const btnHd = document.getElementById('btnHd');
+    const btnGrid = document.getElementById('btnGrid');
+
+    let focus = Math.min(Math.max(streamCams.length - 1, 0), Math.max(0, Number(sessionStorage.getItem('camIdx') || 0)));
+    let view = 'one';
+    let mosaicCams = [];
+    let signalCams = [];
+    let gridColsNow = 2;
+    let hd = isTV ? false : (sessionStorage.getItem('camHd') != null ? sessionStorage.getItem('camHd') === '1' : true);
+    let probeEpoch = 0;
+    let scanBusy = false;
+    let signalReady = false;
+    let inputLive = null;
+    let muted = true;
+    let recMuted = false;
+    let gesture = null;
+    let liveToken = 0;
+    let liveEdgeTimer = 0;
+
+    function phone() { return phoneQuery.matches; }
+    function focused() { return streamCams[focus] || null; }
+    function streamOf(cam, q) {
+      // El main HEVC es rango completo y el navegador lo pinta gris.
+      // PC y teléfono usan el H.264 de rango de TV. La tele se queda en el sub.
+      if (q === 'main' && cam && cam.stream_main && !isTV) {
+        const hdName = String(cam.stream_main).replace(/_main$/, '_hd');
+        if (hdName !== cam.stream_main) return hdName;
+      }
+      return q === 'main' ? cam.stream_main : cam.stream_sub;
+    }
+    function dvrChannel(cam) {
+      const n = cam && Number(cam.channel);
+      return Number.isInteger(n) && n > 0 ? n : 0;
+    }
+    function fitGrid(n) {
+      const wide = isTV || !phone();
+      let cols = n <= 1 ? 1 : 2;
+      if (wide && n >= 5) cols = 3;
+      if (wide && n >= 7) cols = 4;
+      const rows = Math.max(1, Math.ceil(n / cols));
+      gridColsNow = cols;
+      stage.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+      stage.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+    }
+    function camSrc(cam) { return (cam && (cam.stream_sub || cam.stream_main)) || ''; }
+    function sortCams(list) {
+      return list.slice().sort((a, b) => {
+        const ca = dvrChannel(a), cb = dvrChannel(b);
+        if (ca && cb && ca !== cb) return ca - cb;
+        if (ca !== cb) return ca ? -1 : 1;
+        return String(a.id).localeCompare(String(b.id));
+      });
+    }
+    function inputAllows(cam) {
+      if (!inputLive) return true;
+      const n = dvrChannel(cam);
+      if (!n) return true;
+      return inputLive[String(n)] === true;
+    }
+    async function refreshInputs() {
+      try {
+        const data = await fetch('./api/inputs', { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
+        if (!data || !Array.isArray(data.channels)) return;
+        const map = {};
+        for (const ch of data.channels) map[String(ch.channel)] = !!ch.video;
+        inputLive = map;
+      } catch (_) {}
+    }
+    async function hasSignal(cam) {
+      if (!inputAllows(cam)) return false;
+      const src = camSrc(cam);
+      if (!src) return false;
+      const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : 0;
+      try {
+        const r = await fetch(`${GO2RTC}/api/frame.jpeg?src=${encodeURIComponent(src)}`, {
+          cache: 'no-store',
+          signal: ctrl ? ctrl.signal : undefined,
+        });
+        if (!r.ok) return false;
+        const buf = await r.arrayBuffer();
+        return buf.byteLength >= 2000;
+      } catch (_) {
+        return false;
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
+    async function camsWithSignal(list) {
+      const cams = list || streamCams;
+      const checks = await Promise.all(cams.map(async (cam) => (await hasSignal(cam)) ? cam : null));
+      return checks.filter(Boolean);
+    }
+    function snapFocusToSignal() {
+      if (!signalCams.length) return;
+      const cur = focused();
+      if (cur && signalCams.some(c => c.id === cur.id)) return;
+      const idx = streamCams.indexOf(signalCams[0]);
+      if (idx < 0) return;
+      focus = idx;
+      sessionStorage.setItem('camIdx', String(focus));
+    }
+    function adoptStreams(incoming) {
+      for (const cam of incoming) {
+        if (!cam || cam.type !== 'stream' || !camSrc(cam) || !cam.id) continue;
+        const prev = streamCams.find(c => c.id === cam.id);
+        if (!prev) streamCams.push(cam);
+        else Object.assign(prev, cam);
+      }
+    }
+    async function refreshCatalog() {
+      try {
+        const cfg = await fetch('./cameras.json', { cache: 'no-store' }).then(r => r.json());
+        adoptStreams((cfg && cfg.cameras) || []);
+      } catch (_) {}
+    }
+    // Con dar en el catálogo, ese recuadro manda en HD, Fluido, mosaico y Grabación. Sin dar, el cuadro usa sus píxeles.
+    function camDar(cam) {
+      const d = cam && cam.dar;
+      if (!Array.isArray(d) || d.length !== 2) return 0;
+      const w = Number(d[0]), h = Number(d[1]);
+      if (!(w > 0) || !(h > 0)) return 0;
+      return w / h;
+    }
+    function frameDar(cam, video) {
+      const catalog = camDar(cam);
+      if (catalog > 0) return catalog;
+      const vw = video && video.videoWidth;
+      const vh = video && video.videoHeight;
+      if (vw > 0 && vh > 0) return vw / vh;
+      return 0;
+    }
+    function applyFrameDar(video) {
+      if (!video) return;
+      const box = video.closest('.cell, .rec-player');
+      if (!box) return;
+      const cam = box.classList.contains('rec-player')
+        ? streamCams.find(c => dvrChannel(c) === recChannel)
+        : streamCams.find(c => String(c.id) === box.dataset.id);
+      const dar = frameDar(cam, video);
+      if (!(dar > 0)) return;
+      box.dataset.dar = String(dar);
+      video.style.objectFit = 'fill';
+      if (video.videoHeight > 0) {
+        video.setAttribute('width', String(Math.round(video.videoHeight * dar)));
+        video.setAttribute('height', String(video.videoHeight));
+      }
+      watchDar(box);
+    }
+    function layoutDar(box) {
+      if (!box) return;
+      const dar = Number(box.dataset.dar);
+      const host = box.querySelector('video-stream');
+      if (!host || !(dar > 0)) return;
+      const cw = box.clientWidth, ch = box.clientHeight;
+      if (!cw || !ch) return;
+      let w = cw, h = w / dar;
+      if (h > ch) { h = ch; w = h * dar; }
+      host.style.setProperty('width', Math.floor(w) + 'px', 'important');
+      host.style.setProperty('height', Math.floor(h) + 'px', 'important');
+    }
+    let darObserver = null;
+    function watchDar(box) {
+      if (!box || !box.dataset.dar) return;
+      if (typeof ResizeObserver === 'function') {
+        if (!darObserver) {
+          darObserver = new ResizeObserver(entries => {
+            for (const e of entries) layoutDar(e.target);
+          });
+        }
+        darObserver.observe(box);
+      }
+      layoutDar(box);
+      requestAnimationFrame(() => layoutDar(box));
+    }
+    window.addEventListener('resize', () => {
+      document.querySelectorAll('[data-dar]').forEach(layoutDar);
+    });
+    function applyRecDar() {
+      const cam = streamCams.find(c => dvrChannel(c) === recChannel);
+      const dar = camDar(cam);
+      if (darObserver) darObserver.unobserve(recPlayer);
+      const host = recPlayer.querySelector('video-stream');
+      if (!dar) {
+        delete recPlayer.dataset.dar;
+        if (host) {
+          host.style.removeProperty('width');
+          host.style.removeProperty('height');
+        }
+        return;
+      }
+      recPlayer.dataset.dar = String(dar);
+      watchDar(recPlayer);
+    }
+
+    function applyVideo(vs) {
+      const hook = () => {
+        const v = vs.querySelector('video');
+        if (!v) return false;
+        v.playsInline = true;
+        v.controls = false;
+        v.removeAttribute('controls');
+        v.setAttribute('playsinline', '');
+        v.setAttribute('webkit-playsinline', '');
+        v.disablePictureInPicture = true;
+        applyFrameDar(v);
+        const darBox = v.closest('[data-dar]');
+        v.style.objectFit = darBox ? 'fill' : 'contain';
+        if (!v.dataset.darFit) {
+          v.dataset.darFit = '1';
+          v.addEventListener('loadedmetadata', () => applyFrameDar(v));
+        }
+        if (isPhone) bindPhoneVideo(v);
+        if (isIOS) bindIosVideo(v);
+        const isRec = vs.dataset.rec === '1';
+        v.muted = isRec ? recMuted : muted;
+        v.autoplay = true;
+        if (isTV || vs.dataset.rec === '1') {
+          if (isTV) v.controls = false;
+          try {
+            const rate = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'playbackRate');
+            if (rate && rate.set && !Object.prototype.hasOwnProperty.call(v, 'playbackRate')) {
+              Object.defineProperty(v, 'playbackRate', {
+                configurable: true,
+                get() { return rate.get.call(this); },
+                set(val) { rate.set.call(this, val > 1.05 ? 1 : val); },
+              });
+            }
+          } catch (_) {}
+        }
+        const started = v.play?.();
+        if (started && started.catch) {
+          started.catch(() => {
+            if (!isRec || recMuted) return;
+            recMuted = true;
+            v.muted = true;
+            const btn = document.getElementById('recMute');
+            if (btn) {
+              btn.textContent = 'Silencio';
+              btn.classList.remove('on');
+            }
+            recStatus.textContent = 'Toca Sonido para oír el micrófono.';
+          });
+        }
+        return true;
+      };
+      if (hook()) return;
+      const mo = new MutationObserver(() => { if (hook()) mo.disconnect(); });
+      mo.observe(vs, { childList: true, subtree: true });
+      setTimeout(() => mo.disconnect(), 8000);
+    }
+
+    function stopLive() {
+      liveToken++;
+      if (liveEdgeTimer) {
+        clearInterval(liveEdgeTimer);
+        liveEdgeTimer = 0;
+      }
+      if (darObserver) stage.querySelectorAll('[data-dar]').forEach(el => darObserver.unobserve(el));
+      stage.querySelectorAll('video-stream').forEach(vs => {
+        try { vs.ondisconnect?.(); } catch (_) {}
+      });
+      stage.innerHTML = '';
+    }
+
+    function armLiveEdge() {
+      if (!isTV || view !== 'grid') return;
+      liveEdgeTimer = setInterval(() => {
+        stage.querySelectorAll('video').forEach(v => {
+          if (v.readyState < 2 || !v.buffered || !v.buffered.length) return;
+          const end = v.buffered.end(v.buffered.length - 1);
+          if (end - v.currentTime > 1.2) {
+            try { v.currentTime = Math.max(0, end - 0.35); } catch (_) {}
+          }
+        });
+      }, 2000);
+    }
+
+    function markGrid() {
+      const id = focused() && focused().id;
+      stage.querySelectorAll('.cell').forEach(el => el.classList.toggle('on', el.dataset.id === id));
+    }
+
+    function addCell(cam, quality, delay) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.id = cam.id;
+      const dar = camDar(cam);
+      if (dar) cell.dataset.dar = String(dar);
+      const name = streamOf(cam, quality);
+      const vs = document.createElement('video-stream');
+      vs.background = false;
+      // El main HEVC no entra por WebRTC. En el iPhone ese caso va por HLS.
+      vs.mode = (isIOS && /_main$/.test(name)) ? 'hls,mp4' : playMode;
+      if (isTV || view === 'grid') {
+        vs.media = 'video';
+        vs.visibilityCheck = false;
+      }
+      const token = liveToken;
+      const start = () => {
+        if (token !== liveToken) return;
+        vs.src = new URL(`${GO2RTC}/api/ws?src=${encodeURIComponent(name)}`);
+        applyVideo(vs);
+      };
+      if (delay) setTimeout(start, delay);
+      else start();
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.innerHTML = `<span>${cam.name}</span><b class="${quality === 'main' ? '' : 'sub'}">${quality === 'main' ? 'HD' : 'Fluido'}</b>`;
+      cell.append(vs, tag);
+      if (view === 'grid') {
+        cell.addEventListener('click', () => openOne(streamCams.indexOf(cam)));
+      }
+      stage.appendChild(cell);
+      if (dar) watchDar(cell);
+      return name;
+    }
+
+    async function renderLive() {
+      if (document.body.dataset.mode !== 'live') return;
+      liveZoom.reset();
+      stopLive();
+      const token = liveToken;
+      stage.style.gridTemplateColumns = '';
+      stage.style.gridTemplateRows = '';
+      const cam = focused();
+      stage.className = 'stage ' + (view === 'one' ? 'one' : 'grid');
+      if (view !== 'grid') {
+        if (!cam) {
+          stage.innerHTML = '<div class="empty">No hay cámaras</div>';
+        } else {
+          addCell(cam, hd ? 'main' : 'sub');
+          title.textContent = cam.name;
+          subtitle.textContent = isTV
+            ? (hd ? 'Tele · HD' : 'Tele · fluido')
+            : (hd ? 'En vivo · HD' : 'En vivo · fluido');
+          liveHint.textContent = isTV
+            ? (hd ? 'HD · 1 canal' : 'Tele · 1 canal')
+            : (hd ? 'HD · 1 canal' : 'Fluido · 1 canal');
+        }
+      } else {
+        stage.innerHTML = '<div class="empty">Buscando señal…</div>';
+        probeEpoch += 1;
+        const epoch = probeEpoch;
+        let live = [];
+        try { live = sortCams(await camsWithSignal()); } catch (_) { live = []; }
+        if (token !== liveToken || epoch !== probeEpoch || document.body.dataset.mode !== 'live' || view !== 'grid') return;
+        stage.innerHTML = '';
+        signalCams = live;
+        mosaicCams = live;
+        title.textContent = 'Mosaico';
+        if (!live.length) {
+          stage.innerHTML = '<div class="empty">Ningún canal con señal</div>';
+          subtitle.textContent = 'Sin señal';
+          liveHint.textContent = 'Sin señal';
+        } else {
+          fitGrid(live.length);
+          live.forEach((c, i) => addCell(c, 'sub', i * 120));
+          subtitle.textContent = `Fluido · ${live.length} con señal`;
+          liveHint.textContent = `Fluido · ${live.length} con señal`;
+          markGrid();
+          armLiveEdge();
+        }
+      }
+      btnHd.classList.toggle('on', view === 'one' && hd);
+      btnGrid.classList.toggle('on', view === 'grid');
+      renderFilm();
+      if (iosLarge) requestAnimationFrame(placeIosLarge);
+    }
+
+    function markFilm() {
+      const id = focused() && focused().id;
+      film.querySelectorAll('.shot').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+      const on = film.querySelector('.shot.on');
+      if (on) {
+        const left = on.offsetLeft - (film.clientWidth - on.clientWidth) / 2;
+        film.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+      }
+    }
+
+    function renderFilm() {
+      const next = signalCams.map(c => c.id).join(',');
+      const now = [...film.querySelectorAll('.shot')].map(b => b.dataset.id).join(',');
+      if (now === next) {
+        markFilm();
+        return;
+      }
+      film.innerHTML = '';
+      signalCams.forEach((cam, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'shot';
+        b.dataset.id = cam.id;
+        b.innerHTML = `<div class="thumb"></div><small>${cam.name}</small>`;
+        const thumb = b.querySelector('.thumb');
+        b.addEventListener('click', () => openOne(streamCams.indexOf(cam)));
+        film.appendChild(b);
+        if (isTV) {
+          thumb.textContent = cam.id;
+        } else {
+          const src = camSrc(cam);
+          setTimeout(() => {
+            if (!b.isConnected || !src) return;
+            thumb.style.backgroundImage = `url("${GO2RTC}/api/frame.jpeg?src=${encodeURIComponent(src)}")`;
+          }, 400 + i * 180);
+        }
+      });
+      markFilm();
+    }
+
+    function syncMosaicCells() {
+      if (view !== 'grid' || document.body.dataset.mode !== 'live') return;
+      const empty = stage.querySelector('.empty');
+      if (empty && signalCams.length) empty.remove();
+      stage.querySelectorAll('.cell').forEach(el => {
+        if (!signalCams.some(c => String(c.id) === el.dataset.id)) {
+          const vs = el.querySelector('video-stream');
+          try { vs && vs.ondisconnect && vs.ondisconnect(); } catch (_) {}
+          el.remove();
+        }
+      });
+      const have = new Set([...stage.querySelectorAll('.cell')].map(el => el.dataset.id));
+      signalCams.forEach(cam => {
+        if (!have.has(String(cam.id))) addCell(cam, 'sub', 0);
+      });
+      const cells = new Map([...stage.querySelectorAll('.cell')].map(el => [el.dataset.id, el]));
+      signalCams.forEach(cam => {
+        const cell = cells.get(String(cam.id));
+        if (cell) stage.appendChild(cell);
+      });
+      mosaicCams = signalCams.slice();
+      if (!signalCams.length) {
+        stage.innerHTML = '<div class="empty">Ningún canal con señal</div>';
+        subtitle.textContent = 'Sin señal';
+        liveHint.textContent = 'Sin señal';
+        return;
+      }
+      fitGrid(signalCams.length);
+      subtitle.textContent = `Fluido · ${signalCams.length} con señal`;
+      liveHint.textContent = `Fluido · ${signalCams.length} con señal`;
+      markGrid();
+    }
+
+    async function watchUnused() {
+      if (!signalReady || document.hidden || scanBusy) return;
+      scanBusy = true;
+      const epoch = probeEpoch;
+      try {
+        await refreshCatalog();
+        await refreshInputs();
+        if (epoch !== probeEpoch) return;
+        const kept = signalCams.filter(inputAllows);
+        const dropped = kept.length !== signalCams.length;
+        signalCams = kept;
+        const have = new Set(signalCams.map(c => c.id));
+        const pending = streamCams.filter(c => inputAllows(c) && !have.has(c.id));
+        const found = pending.length ? await camsWithSignal(pending) : [];
+        if (epoch !== probeEpoch) return;
+        let added = false;
+        for (const cam of found) {
+          if (signalCams.some(c => c.id === cam.id)) continue;
+          signalCams.push(cam);
+          added = true;
+        }
+        if (!added && !dropped) return;
+        signalCams = sortCams(signalCams);
+        if (dropped) snapFocusToSignal();
+        renderFilm();
+        if (document.body.dataset.mode === 'rec') renderRecChips();
+        if (view === 'grid') syncMosaicCells();
+        else if (dropped && !signalCams.some(c => focused() && c.id === focused().id)) renderLive();
+      } catch (_) {
+      } finally {
+        scanBusy = false;
+      }
+    }
+
+    function openOne(index) {
+      if (index < 0 || index >= streamCams.length) return;
+      focus = index;
+      view = 'one';
+      sessionStorage.setItem('camIdx', String(focus));
+      renderLive();
+    }
+
+    function shift(delta) {
+      const list = signalCams.length ? signalCams : [];
+      if (!list.length) return;
+      const cur = list.findIndex(c => focused() && c.id === focused().id);
+      const i = cur < 0 ? 0 : (cur + delta + list.length) % list.length;
+      const next = streamCams.indexOf(list[i]);
+      if (next < 0) return;
+      if (view === 'one') {
+        openOne(next);
+        return;
+      }
+      if (next !== focus) {
+        focus = next;
+        sessionStorage.setItem('camIdx', String(focus));
+        markGrid();
+        markFilm();
+      }
+    }
+
+    btnHd.addEventListener('click', () => {
+      if (view !== 'one') {
+        view = 'one';
+        hd = true;
+      } else {
+        hd = !hd;
+      }
+      sessionStorage.setItem('camHd', hd ? '1' : '0');
+      renderLive();
+    });
+    btnGrid.addEventListener('click', () => {
+      if (view === 'grid') {
+        view = 'one';
+      } else {
+        view = 'grid';
+      }
+      renderLive();
+    });
+    document.getElementById('btnMute').addEventListener('click', (ev) => {
+      muted = !muted;
+      ev.currentTarget.textContent = muted ? 'Silencio' : 'Sonido';
+      ev.currentTarget.classList.toggle('on', !muted);
+      document.querySelectorAll('#stage video').forEach(v => {
+        v.muted = muted;
+        if (!muted) v.play?.().catch(() => {});
+      });
+    });
+    document.getElementById('recMute').addEventListener('click', (ev) => {
+      recMuted = !recMuted;
+      ev.currentTarget.textContent = recMuted ? 'Silencio' : 'Sonido';
+      ev.currentTarget.classList.toggle('on', !recMuted);
+      const v = recVs && recVs.querySelector('video');
+      if (!v) return;
+      v.muted = recMuted;
+      if (!recMuted) v.play?.().catch(() => {});
+    });
+    document.getElementById('btnShot').addEventListener('click', () => {
+      const cam = focused();
+      if (!cam) return;
+      const q = view === 'one' && hd ? 'main' : 'sub';
+      const a = document.createElement('a');
+      a.href = `${GO2RTC}/api/frame.jpeg?src=${encodeURIComponent(streamOf(cam, q))}`;
+      a.download = `${cam.name}.jpg`;
+      a.target = '_blank';
+      a.click();
+    });
+    let iosLarge = false;
+    let leavingNative = false;
+    function clearShell(el) {
+      if (!el) return;
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.height = '';
+    }
+    function placeIosLarge() {
+      const stageShell = document.querySelector('.stage-wrap');
+      const recShell = document.getElementById('recPlayer');
+      const on = document.body.classList.contains('ios-large');
+      if (!on || !window.visualViewport) {
+        clearShell(stageShell);
+        clearShell(recShell);
+        if (on) document.querySelectorAll('[data-dar]').forEach(layoutDar);
+        return;
+      }
+      const shell = document.body.dataset.mode === 'rec' ? recShell : stageShell;
+      clearShell(shell === stageShell ? recShell : stageShell);
+      const vv = window.visualViewport;
+      shell.style.top = vv.offsetTop + 'px';
+      shell.style.left = vv.offsetLeft + 'px';
+      shell.style.width = vv.width + 'px';
+      shell.style.height = vv.height + 'px';
+      document.querySelectorAll('[data-dar]').forEach(layoutDar);
+    }
+    let iosTimer = 0;
+    let largeHist = false;
+    function iosMotionOk() {
+      return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    function finishIosClose() {
+      clearTimeout(iosTimer);
+      if (iosLarge) return;
+      document.body.classList.remove('ios-large', 'ios-enter', 'ios-leave');
+      placeIosLarge();
+    }
+    function releaseLargeHist() {
+      if (!largeHist) return;
+      largeHist = false;
+      if (history.state && history.state.camLarge) history.back();
+    }
+    function setIosLarge(on) {
+      const next = !!on;
+      clearTimeout(iosTimer);
+      if (next) {
+        iosLarge = true;
+        document.body.classList.remove('ios-leave');
+        document.body.classList.add('ios-large');
+        if (iosMotionOk()) document.body.classList.add('ios-enter');
+        else document.body.classList.remove('ios-enter');
+        placeIosLarge();
+        if (iosMotionOk()) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => document.body.classList.remove('ios-enter'));
+          });
+        }
+        if (isPhone && !largeHist) {
+          largeHist = true;
+          history.pushState({ camLarge: 1 }, '');
+        }
+        return;
+      }
+      if (!document.body.classList.contains('ios-large')) {
+        iosLarge = false;
+        return;
+      }
+      iosLarge = false;
+      document.body.classList.remove('ios-enter');
+      if (!iosMotionOk()) finishIosClose();
+      else {
+        document.body.classList.add('ios-leave');
+        iosTimer = setTimeout(finishIosClose, 260);
+      }
+      releaseLargeHist();
+    }
+    function bindPhoneVideo(v) {
+      if (v.dataset.phoneBound) return;
+      v.dataset.phoneBound = '1';
+      const fit = () => {
+        v.controls = false;
+        v.removeAttribute('controls');
+        v.setAttribute('controlsList', 'nofullscreen nodownload noremoteplayback');
+        applyFrameDar(v);
+      };
+      v.addEventListener('loadedmetadata', fit);
+      if (v.readyState >= 1) fit();
+    }
+    function bindIosVideo(v) {
+      if (v.dataset.iosBound) return;
+      v.dataset.iosBound = '1';
+      const pullBack = () => {
+        if (leavingNative) return;
+        const mode = v.webkitPresentationMode;
+        if (mode && mode !== 'inline') {
+          leavingNative = true;
+          try { v.webkitExitFullscreen(); } catch (_) {}
+          leavingNative = false;
+          setIosLarge(true);
+        }
+      };
+      v.addEventListener('webkitbeginfullscreen', pullBack);
+      v.addEventListener('webkitpresentationmodechanged', pullBack);
+    }
+    const stageWrap = document.querySelector('.stage-wrap');
+    function toggleFs(node) {
+      if (isPhone) { setIosLarge(!iosLarge); return; }
+      const cur = document.fullscreenElement || document.webkitFullscreenElement;
+      if (cur) {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) exit.call(document);
+        return;
+      }
+      const ask = node.requestFullscreen || node.webkitRequestFullscreen;
+      if (ask) ask.call(node);
+    }
+    document.getElementById('btnFs').addEventListener('click', () => toggleFs(stageWrap));
+    document.getElementById('liveFs').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      toggleFs(stageWrap);
+    });
+    stage.addEventListener('dblclick', (ev) => {
+      if (isPhone || ev.target.closest('button')) return;
+      toggleFs(stageWrap);
+    });
+    const iosClose = document.getElementById('iosClose');
+    let iosCloseAt = 0;
+    function onIosClose(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const now = Date.now();
+      if (now - iosCloseAt < 350) return;
+      iosCloseAt = now;
+      setIosLarge(false);
+    }
+    // El video del teléfono se queda el primer toque. pointerup cierra al instante
+    // y no deja que ese mismo gesto cuente como doble toque en la imagen.
+    iosClose.addEventListener('pointerdown', (ev) => {
+      ev.stopPropagation();
+    });
+    iosClose.addEventListener('pointerup', onIosClose, { passive: false });
+    iosClose.addEventListener('click', onIosClose);
+    if (isAndroid) {
+      document.addEventListener('fullscreenchange', () => {
+        const el = document.fullscreenElement;
+        if (!el || leavingNative) return;
+        leavingNative = true;
+        const back = () => {
+          leavingNative = false;
+          setIosLarge(true);
+        };
+        const pending = document.exitFullscreen?.();
+        if (pending && typeof pending.then === 'function') pending.then(back, back);
+        else back();
+      });
+    }
+    window.addEventListener('popstate', () => {
+      if (!isPhone || !largeHist) return;
+      largeHist = false;
+      if (iosLarge || document.body.classList.contains('ios-large')) setIosLarge(false);
+    });
+    if (isPhone) {
+      const fitVv = () => {
+        const vv = window.visualViewport;
+        const h = vv ? vv.height : window.innerHeight;
+        document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+        if (iosLarge) placeIosLarge();
+      };
+      fitVv();
+      window.visualViewport?.addEventListener('resize', fitVv);
+      window.visualViewport?.addEventListener('scroll', fitVv);
+      window.addEventListener('orientationchange', () => setTimeout(fitVv, 200));
+    }
+
+    function makeZoom(root, buttons, enabled) {
+      const state = { scale: 1, x: 0, y: 0, pts: new Map(), base: 0, baseScale: 1, block: false };
+      function on() { return enabled(); }
+      function host() { return root.querySelector('video-stream'); }
+      function paint() {
+        const el = host();
+        if (!el) return;
+        if (state.scale <= 1.01) {
+          state.scale = 1;
+          state.x = 0;
+          state.y = 0;
+          el.style.transform = '';
+          return;
+        }
+        const box = root.getBoundingClientRect();
+        const limX = Math.max(0, (el.offsetWidth * state.scale - box.width) / 2);
+        const limY = Math.max(0, (el.offsetHeight * state.scale - box.height) / 2);
+        state.x = Math.max(-limX, Math.min(limX, state.x));
+        state.y = Math.max(-limY, Math.min(limY, state.y));
+        el.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+      }
+      function zoomBy(factor, clientX, clientY) {
+        if (!on()) return;
+        const prev = state.scale || 1;
+        const next = Math.min(6, Math.max(1, prev * factor));
+        if (clientX != null && prev > 1) {
+          const box = root.getBoundingClientRect();
+          const ox = clientX - (box.left + box.width / 2);
+          const oy = clientY - (box.top + box.height / 2);
+          const k = next / prev;
+          state.x = ox - (ox - state.x) * k;
+          state.y = oy - (oy - state.y) * k;
+        }
+        state.scale = next;
+        paint();
+      }
+      function reset() {
+        state.scale = 1;
+        state.x = 0;
+        state.y = 0;
+        state.pts.clear();
+        state.block = false;
+        const el = host();
+        if (el) el.style.transform = '';
+      }
+      root.addEventListener('pointerdown', (ev) => {
+        if (!on() || ev.target.closest('button, a, input')) return;
+        state.pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY, ox: ev.clientX, oy: ev.clientY });
+        if (state.pts.size === 2) {
+          const pts = [...state.pts.values()];
+          state.base = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+          state.baseScale = state.scale;
+          state.block = true;
+        }
+      });
+      root.addEventListener('pointermove', (ev) => {
+        const pt = state.pts.get(ev.pointerId);
+        if (!pt || !on()) return;
+        const dx = ev.clientX - pt.x;
+        const dy = ev.clientY - pt.y;
+        pt.x = ev.clientX;
+        pt.y = ev.clientY;
+        if (state.pts.size >= 2) {
+          const pts = [...state.pts.values()];
+          const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+          const midX = (pts[0].x + pts[1].x) / 2;
+          const midY = (pts[0].y + pts[1].y) / 2;
+          const next = Math.min(6, Math.max(1, state.baseScale * dist / state.base));
+          const prev = state.scale || 1;
+          const box = root.getBoundingClientRect();
+          const ox = midX - (box.left + box.width / 2);
+          const oy = midY - (box.top + box.height / 2);
+          const k = next / prev;
+          state.x = ox - (ox - state.x) * k;
+          state.y = oy - (oy - state.y) * k;
+          state.scale = next;
+          state.block = true;
+          paint();
+          return;
+        }
+        if (state.scale > 1) {
+          state.x += dx;
+          state.y += dy;
+          if (Math.hypot(ev.clientX - pt.ox, ev.clientY - pt.oy) > 8) state.block = true;
+          paint();
+        }
+      });
+      function endPointer(ev) {
+        const pt = state.pts.get(ev.pointerId);
+        if (pt && state.scale > 1 && Math.hypot(ev.clientX - pt.ox, ev.clientY - pt.oy) > 8) state.block = true;
+        state.pts.delete(ev.pointerId);
+        if (state.pts.size < 2) state.base = 0;
+      }
+      root.addEventListener('pointerup', endPointer);
+      root.addEventListener('pointercancel', endPointer);
+      root.addEventListener('wheel', (ev) => {
+        if (!on()) return;
+        ev.preventDefault();
+        zoomBy(ev.deltaY < 0 ? 1.12 : 1 / 1.12, ev.clientX, ev.clientY);
+      }, { passive: false });
+      buttons.querySelectorAll('[data-zoom]').forEach((btn) => {
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          zoomBy(btn.dataset.zoom === 'in' ? 1.4 : 1 / 1.4);
+        });
+      });
+      return {
+        reset,
+        busy() { return state.block || state.pts.size >= 2; },
+        takeBlock() {
+          if (state.pts.size > 0) return true;
+          const blocked = state.block;
+          state.block = false;
+          return blocked;
+        },
+      };
+    }
+    const liveZoom = makeZoom(stage, document.getElementById('liveZoom'), () => view === 'one');
+    stage.addEventListener('pointerdown', (ev) => {
+      if (ev.target.closest('button')) return;
+      gesture = { x: ev.clientX, y: ev.clientY, id: ev.pointerId };
+    });
+    let lastTap = 0;
+    stage.addEventListener('pointerup', (ev) => {
+      if (liveZoom.takeBlock()) { gesture = null; return; }
+      if (!gesture || gesture.id !== ev.pointerId) return;
+      const dx = ev.clientX - gesture.x;
+      const dy = ev.clientY - gesture.y;
+      gesture = null;
+      if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.2) {
+        if (isPhone && view === 'one') {
+          const now = Date.now();
+          if (now - lastTap < 320) { setIosLarge(!iosLarge); lastTap = 0; }
+          else lastTap = now;
+        }
+        return;
+      }
+      shift(dx < 0 ? 1 : -1);
+    });
+    stage.addEventListener('pointercancel', () => { gesture = null; });
+    phoneQuery.addEventListener('change', () => { if (view === 'grid') renderLive(); });
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.target.closest('input, textarea, select')) return;
+      if (document.getElementById('archDlg').open) return;
+      if (document.body.dataset.mode === 'rec') {
+        if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+        ev.preventDefault();
+        if (ev.repeat) return;
+        nudgeRec(ev.key === 'ArrowLeft' ? -10000 : 10000);
+        return;
+      }
+      if (document.body.dataset.mode !== 'live') return;
+      if (ev.target.closest('button, a')) return;
+      if (view === 'grid') {
+        const cols = gridColsNow;
+        const n = mosaicCams.length;
+        let i = mosaicCams.findIndex(c => focused() && c.id === focused().id);
+        if (i < 0) i = 0;
+        if (ev.key === 'ArrowRight') i = Math.min(n - 1, i + 1);
+        else if (ev.key === 'ArrowLeft') i = Math.max(0, i - 1);
+        else if (ev.key === 'ArrowDown') i = Math.min(n - 1, i + cols);
+        else if (ev.key === 'ArrowUp') i = Math.max(0, i - cols);
+        else if (ev.key === 'Enter') { openOne(streamCams.indexOf(focused())); return; }
+        else return;
+        ev.preventDefault();
+        const next = streamCams.indexOf(mosaicCams[i]);
+        if (next >= 0 && next !== focus) {
+          focus = next;
+          sessionStorage.setItem('camIdx', String(focus));
+          markGrid();
+          markFilm();
+        }
+        return;
+      }
+      if (ev.key === 'ArrowRight') shift(1);
+      if (ev.key === 'ArrowLeft') shift(-1);
+    });
+
+    const recDate = document.getElementById('recDate');
+    const recStatus = document.getElementById('recStatus');
+    const recPlayer = document.getElementById('recPlayer');
+    const recZoom = makeZoom(recPlayer, document.getElementById('recZoom'), () => true);
+    document.getElementById('recFs').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (isPhone) { setIosLarge(!iosLarge); return; }
+      toggleFs(recPlayer);
+      return;
+    });
+    let recTap = 0;
+    recPlayer.addEventListener('pointerup', (ev) => {
+      if (!isPhone || ev.target.closest('button, a, input')) return;
+      if (recZoom.busy()) return;
+      const now = Date.now();
+      if (now - recTap < 320) { setIosLarge(!iosLarge); recTap = 0; }
+      else recTap = now;
+    }, true);
+    const tlBar = document.getElementById('tlBar');
+    const tlPlay = document.getElementById('tlPlay');
+    const tlBubble = document.getElementById('tlBubble');
+    const tlLabels = document.getElementById('tlLabels');
+    const clipList = document.getElementById('clipList');
+    const recChips = document.getElementById('recChips');
+    let recSpan = 2;
+    let recChannel = 1;
+    let recData = null;
+    let recDragging = false;
+    let recPlayFrom = null;
+    let recPlayAt = 0;
+    let recTimer = null;
+    let recSeq = 0;
+    let recVs = null;
+    let recSeekTimer = null;
+    let recNudgeMs = 0;
+    let recNudgeTimer = null;
+    let recNudgeBase = 0;
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function bogotaParts(d) {
+      const z = new Date(d.getTime() + offMin() * 60000);
+      return {
+        y: String(z.getUTCFullYear()),
+        m: pad2(z.getUTCMonth() + 1),
+        d: pad2(z.getUTCDate()),
+        h: pad2(z.getUTCHours()),
+        min: pad2(z.getUTCMinutes()),
+        s: pad2(z.getUTCSeconds()),
+      };
+    }
+    recDate.value = (() => { const p = bogotaParts(new Date()); return p.y + '-' + p.m + '-' + p.d; })();
+
+    function renderRecChips() {
+      recChips.innerHTML = '';
+      signalCams.forEach(cam => {
+        const ch = dvrChannel(cam);
+        if (!ch) return;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip' + (ch === recChannel ? ' on' : '');
+        b.textContent = cam.name;
+        b.addEventListener('click', () => {
+          recChannel = ch;
+          focus = streamCams.indexOf(cam);
+          sessionStorage.setItem('camIdx', String(focus));
+          renderRecChips();
+          loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+        });
+        recChips.appendChild(b);
+      });
+    }
+
+    function offMin() { return recData && typeof recData.offsetMinutes === 'number' ? recData.offsetMinutes : -300; }
+    function fmtMs(ms) {
+      const d = new Date(ms + offMin() * 60000);
+      return pad2(d.getUTCDate()) + '/' + pad2(d.getUTCMonth() + 1) + ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes());
+    }
+    function fmtPlay(ms) {
+      const d = new Date(ms + offMin() * 60000);
+      return pad2(d.getUTCDate()) + '/' + pad2(d.getUTCMonth() + 1) + ' '
+        + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds());
+    }
+    function recDuration(a, b) {
+      const x = Date.parse(a), y = Date.parse(b);
+      if (!x || !y || y < x) return '';
+      const m = Math.round((y - x) / 60000);
+      if (m < 60) return m + ' min';
+      const h = Math.floor(m / 60);
+      if (h < 48) return h + ' h ' + (m % 60) + ' min';
+      return Math.floor(h / 24) + ' d ' + (h % 24) + ' h';
+    }
+    function isoZ(ms) { return new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z'); }
+    function currentPlayMs() {
+      if (recPlayFrom == null) return null;
+      if (recDragging || !recPlayAt) return recPlayFrom;
+      return recPlayFrom + (Date.now() - recPlayAt);
+    }
+    function placeHead() {
+      if (!recData || recPlayFrom == null) return;
+      const a = Date.parse(recData.windowStart);
+      const b = Date.parse(recData.windowEnd);
+      const t = currentPlayMs();
+      const pct = Math.min(100, Math.max(0, ((t - a) / Math.max(1, b - a)) * 100));
+      tlPlay.style.left = pct + '%';
+      const label = fmtPlay(t);
+      document.getElementById('tlNow').textContent = label;
+      tlBubble.textContent = label;
+    }
+    function timeAt(ev) {
+      const rect = tlBar.getBoundingClientRect();
+      const x = Math.min(Math.max(0, ev.clientX - rect.left), rect.width || 1);
+      const a = Date.parse(recData.windowStart);
+      const b = Date.parse(recData.windowEnd);
+      return a + (x / (rect.width || 1)) * (b - a);
+    }
+    function snap(ms) {
+      const items = (recData && recData.items) || [];
+      for (const it of items) {
+        const s = Date.parse(it.start), e = Date.parse(it.end);
+        if (ms >= s && ms <= e) return { ms, item: it, gap: false };
+      }
+      let next = null, prev = null;
+      for (const it of items) {
+        const s = Date.parse(it.start), e = Date.parse(it.end);
+        if (s >= ms && (!next || s < Date.parse(next.start))) next = it;
+        if (e <= ms && (!prev || e > Date.parse(prev.end))) prev = it;
+      }
+      if (next) return { ms: Date.parse(next.start), item: next, gap: true };
+      if (prev) {
+        const end = Date.parse(prev.end);
+        return { ms: Math.max(Date.parse(prev.start), end - 5000), item: prev, gap: true };
+      }
+      return null;
+    }
+    function drawTimeline() {
+      tlBar.querySelectorAll('.tl-seg').forEach(node => node.remove());
+      tlLabels.innerHTML = '';
+      if (!recData) return;
+      const a = Date.parse(recData.windowStart);
+      const b = Date.parse(recData.windowEnd);
+      const span = Math.max(1, b - a);
+      for (const it of recData.items || []) {
+        let s = Date.parse(it.start), e = Date.parse(it.end);
+        if (!(e > a && s < b)) continue;
+        s = Math.max(s, a); e = Math.min(e, b);
+        const seg = document.createElement('div');
+        seg.className = 'tl-seg';
+        seg.style.left = ((s - a) / span * 100) + '%';
+        seg.style.width = Math.max(0.4, (e - s) / span * 100) + '%';
+        tlBar.appendChild(seg);
+      }
+      const ticks = recSpan >= 7 ? 7 : (recSpan === 2 ? 8 : 6);
+      for (let i = 0; i <= ticks; i++) {
+        const lab = document.createElement('span');
+        lab.style.left = (i / ticks * 100) + '%';
+        const full = fmtMs(a + span * i / ticks);
+        lab.textContent = recSpan >= 7 ? full.slice(0, 5) : full.slice(6);
+        tlLabels.appendChild(lab);
+      }
+      document.getElementById('tlRange').textContent = fmtMs(a) + ' → ' + fmtMs(b) + ' · HD';
+      placeHead();
+    }
+    function renderClips() {
+      clipList.innerHTML = '';
+      const items = (recData && recData.items) || [];
+      if (!items.length) {
+        clipList.innerHTML = '<li class="rec-empty">Sin grabación en ese rango</li>';
+        return;
+      }
+      items.forEach(it => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="t">${fmtMs(Date.parse(it.start))}</span><span class="m">${recDuration(it.start, it.end)} · HD</span>`;
+        li.addEventListener('click', () => {
+          clipList.querySelectorAll('li').forEach(x => x.classList.remove('active'));
+          li.classList.add('active');
+          seekRec(Date.parse(it.start), true);
+        });
+        clipList.appendChild(li);
+      });
+    }
+    function stopRec() {
+      recZoom.reset();
+      recSeq++;
+      recNudgeMs = 0;
+      if (recNudgeTimer) { clearTimeout(recNudgeTimer); recNudgeTimer = null; }
+      recPlayAt = 0;
+      if (recTimer) { clearInterval(recTimer); recTimer = null; }
+      if (recSeekTimer) { clearTimeout(recSeekTimer); recSeekTimer = null; }
+      if (recVs) {
+        try { clearTimeout(recVs._wait); } catch (_) {}
+        try { if (recVs._mo) recVs._mo.disconnect(); } catch (_) {}
+        try { recVs.src = ''; recVs.remove(); } catch (_) {}
+        recVs = null;
+      }
+    }
+    const dlStatus = document.getElementById('dlStatus');
+    const dlBtn = document.getElementById('dlBtn');
+    const dlHere = document.getElementById('dlHere');
+    let dlEdited = false;
+    ['dlFromDate', 'dlFromTime', 'dlToDate', 'dlToTime'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', () => { dlEdited = true; });
+    });
+    function setDl(fromMs, toMs) {
+      const a = bogotaParts(new Date(fromMs));
+      const b = bogotaParts(new Date(toMs));
+      document.getElementById('dlFromDate').value = a.y + '-' + a.m + '-' + a.d;
+      document.getElementById('dlFromTime').value = a.h + ':' + a.min + ':' + a.s;
+      document.getElementById('dlToDate').value = b.y + '-' + b.m + '-' + b.d;
+      document.getElementById('dlToTime').value = b.h + ':' + b.min + ':' + b.s;
+    }
+    function bogotaToUtc(dateStr, timeStr) {
+      if (!dateStr || !timeStr || timeStr.length < 4) return '';
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const parts = timeStr.split(':').map(Number);
+      const hh = parts[0], mm = parts[1], ss = Number.isFinite(parts[2]) ? parts[2] : 0;
+      if (![y, m, d, hh, mm, ss].every(Number.isFinite)) return '';
+      const ms = Date.UTC(y, m - 1, d, hh, mm, ss) - offMin() * 60000;
+      return new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
+    }
+    function fmtDur(total) {
+      const s = Math.max(0, Math.round(Number(total) || 0));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      if (m && r) return `${m} min ${r} s`;
+      if (m) return `${m} min`;
+      return `${r} s`;
+    }
+    function peso(bytes, exact) {
+      const n = Number(bytes) / 1e6;
+      if (!(n > 0)) return '';
+      const shown = n >= 100 ? String(Math.round(n)) : n.toFixed(1);
+      return exact ? `, ${shown} MB` : `, unos ${shown} MB`;
+    }
+    function clipName(startIso, endIso) {
+      const a = bogotaParts(new Date(Date.parse(startIso)));
+      const b = bogotaParts(new Date(Date.parse(endIso)));
+      return `cam${recChannel}-${a.y}${a.m}${a.d}-${a.h}${a.min}${a.s}-${b.h}${b.min}${b.s}.mp4`;
+    }
+    const dlProgress = document.getElementById('dlProgress');
+    const dlProgressBar = document.getElementById('dlProgressBar');
+    const dlSave = document.getElementById('dlSave');
+    let dlJob = 0;
+    function mbNum(bytes) {
+      const n = Number(bytes) / 1e6;
+      if (!(n > 0)) return '0';
+      return n >= 100 ? String(Math.round(n)) : n.toFixed(1);
+    }
+    function setBar(pct, waiting) {
+      const n = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+      dlProgress.hidden = false;
+      dlProgress.classList.toggle('wait', !!waiting);
+      dlProgressBar.style.width = waiting ? '' : `${n}%`;
+      dlProgress.setAttribute('aria-valuenow', String(waiting ? 0 : n));
+    }
+    function hideBar() {
+      dlProgress.hidden = true;
+      dlProgress.classList.remove('wait');
+      dlProgressBar.style.width = '0';
+      dlProgress.setAttribute('aria-valuenow', '0');
+      dlSave.hidden = true;
+      dlSave.removeAttribute('href');
+      dlSave.textContent = 'Guardar';
+    }
+    function showSave(url, name) {
+      dlSave.href = url;
+      if (isIOS) {
+        dlSave.removeAttribute('download');
+        dlSave.textContent = 'Abrir';
+      } else {
+        dlSave.download = name || 'grabacion.mp4';
+        dlSave.textContent = 'Guardar';
+      }
+      dlSave.hidden = false;
+    }
+    async function shareOnIphone(blob, name) {
+      if (!isIOS || typeof navigator.share !== 'function') return false;
+      const file = new File([blob], name || 'grabacion.mp4', { type: 'video/mp4' });
+      const payload = { files: [file] };
+      try {
+        if (navigator.canShare && !navigator.canShare(payload)) return false;
+        await navigator.share(payload);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+    function dlWait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+    async function saveDownload(token, name, info, job) {
+      const url = `/api/recordings/export?file=${encodeURIComponent(token)}`;
+      const total = Number(info.bytes) || 0;
+      const label = `${fmtDur(info.seconds)}${peso(total, true)}`;
+      showSave(url, name);
+      if (!(total > 0) || total > 96 * 1024 * 1024) {
+        setBar(100, false);
+        dlStatus.textContent = isIOS
+          ? `Listo: ${label}. Toca Abrir para verlo en el iPhone.`
+          : `Listo: ${label}. Toca Guardar.`;
+        if (!isIOS) { try { dlSave.click(); } catch (_) {} }
+        return;
+      }
+      setBar(90, false);
+      dlStatus.textContent = `Descargando ${fmtDur(info.seconds)} · 0 de ${mbNum(total)} MB`;
+      let response;
+      try {
+        response = await fetch(url, { cache: 'no-store' });
+      } catch (_) {
+        setBar(100, false);
+        dlStatus.textContent = `Listo: ${label}. Toca Guardar.`;
+        return;
+      }
+      const ctype = (response.headers.get('Content-Type') || '').toLowerCase();
+      if (!response.ok || ctype.includes('json') || !response.body) {
+        let detail = 'No se pudo guardar el archivo.';
+        try {
+          const body = await response.json();
+          if (body.detail) detail = body.detail;
+        } catch (_) {}
+        setBar(100, false);
+        dlStatus.textContent = `${detail} Toca Guardar.`;
+        return;
+      }
+      const length = Number(response.headers.get('Content-Length')) || total;
+      const reader = response.body.getReader();
+      const chunks = [];
+      let got = 0;
+      try {
+        while (job === dlJob) {
+          const step = await reader.read();
+          if (step.done) break;
+          chunks.push(step.value);
+          got += step.value.byteLength;
+          const frac = length > 0 ? Math.min(1, got / length) : 0;
+          setBar(90 + frac * 10, false);
+          dlStatus.textContent = `Descargando ${fmtDur(info.seconds)} · ${mbNum(got)} de ${mbNum(length)} MB`;
+        }
+      } catch (_) {
+        try { reader.cancel(); } catch (__) {}
+        setBar(90, false);
+        dlStatus.textContent = 'Se cortó al guardar. Toca Guardar para bajarlo otra vez.';
+        return;
+      }
+      if (job !== dlJob) {
+        try { reader.cancel(); } catch (_) {}
+        return;
+      }
+      const blob = new Blob(chunks, { type: 'video/mp4' });
+      const obj = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = obj;
+      a.download = name;
+      document.body.appendChild(a);
+      if (!isIOS) {
+        a.click();
+      }
+      a.remove();
+      const shared = isIOS ? await shareOnIphone(blob, name) : false;
+      setTimeout(() => URL.revokeObjectURL(obj), 120000);
+      setBar(100, false);
+      dlStatus.textContent = shared
+        ? `Listo: ${label}. Guárdalo desde la hoja del iPhone.`
+        : (isIOS
+          ? `Listo: ${label}. Toca Abrir para verlo en el iPhone.`
+          : `Listo: ${label}. Si no se guardó, toca Guardar.`);
+    }
+    async function downloadSpan(start, end) {
+      if (!start || !end) { dlStatus.textContent = 'Elige fecha y hora de inicio y de fin.'; return; }
+      const secs = (Date.parse(end) - Date.parse(start)) / 1000;
+      if (!(secs >= 60)) { dlStatus.textContent = 'La hora final tiene que quedar al menos un minuto después.'; return; }
+      if (secs > 4 * 3600) { dlStatus.textContent = 'El máximo para descargar es 4 horas.'; return; }
+      const job = ++dlJob;
+      dlBtn.disabled = true;
+      dlHere.disabled = true;
+      hideBar();
+      setBar(0, true);
+      dlStatus.textContent = 'Revisando ese tramo…';
+      let token = '';
+      try {
+        const q = `cam=${encodeURIComponent(recChannel)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+        const r = await fetch(`/api/recordings/export?${q}&check=1`, { cache: 'no-store' });
+        const j = await r.json();
+        if (job !== dlJob) return;
+        if (!r.ok) throw new Error(j.detail || 'No hay grabación en ese tramo.');
+        let gap = '';
+        if (Math.abs((Number(j.seconds) || secs) - secs) > 2) gap = ' Hay huecos; el archivo trae lo grabado.';
+        const built = await fetch(`/api/recordings/export?${q}&build=1`, { cache: 'no-store' });
+        const started = await built.json();
+        if (job !== dlJob) return;
+        if (!built.ok || !started.token) throw new Error(started.detail || 'No se pudo armar el archivo.');
+        token = started.token;
+        let ready = started.state === 'ready' ? started : null;
+        let misses = 0;
+        while (!ready && job === dlJob) {
+          await dlWait(700);
+          if (job !== dlJob) return;
+          let p;
+          try {
+            const pr = await fetch(`/api/recordings/export?progress=1&token=${encodeURIComponent(token)}`, { cache: 'no-store' });
+            p = await pr.json();
+            if (!pr.ok && p.state !== 'error') throw new Error(p.detail || 'Sin respuesta.');
+          } catch (err) {
+            misses += 1;
+            if (misses < 8) continue;
+            throw new Error((err && err.message) || 'Se perdió el contacto. Pulsa Descargar otra vez.');
+          }
+          misses = 0;
+          if (p.state === 'error') throw new Error(p.detail || 'No se pudo armar el archivo.');
+          const total = Number(p.bytes) || Number(j.bytes) || 0;
+          const done = Number(p.done) || 0;
+          const waiting = p.state === 'building' && done <= 0;
+          const frac = total > 0 ? Math.min(1, done / total) : 0;
+          setBar(waiting ? 0 : frac * 90, waiting);
+          const archivo = Number(p.files) > 1
+            ? `archivo ${Math.min(p.files, (Number(p.fileDone) || 0) + 1)} de ${p.files} · `
+            : '';
+          dlStatus.textContent = waiting
+            ? `Conectando con la grabación…${gap}`
+            : `Preparando ${fmtDur(p.seconds || j.seconds)} · ${archivo}${mbNum(done)} de ${mbNum(total)} MB.${gap}`;
+          if (p.state === 'ready') ready = p;
+        }
+        if (!ready || job !== dlJob) return;
+        await saveDownload(token, ready.name || clipName(start, end), ready, job);
+      } catch (err) {
+        if (job !== dlJob) return;
+        hideBar();
+        dlStatus.textContent = (err && err.message) ? err.message : 'No se pudo preparar la descarga.';
+      } finally {
+        if (job === dlJob) {
+          dlBtn.disabled = false;
+          dlHere.disabled = false;
+        }
+      }
+    }
+    function downloadRange() {
+      const start = bogotaToUtc(document.getElementById('dlFromDate').value, document.getElementById('dlFromTime').value);
+      const end = bogotaToUtc(document.getElementById('dlToDate').value, document.getElementById('dlToTime').value);
+      return downloadSpan(start, end);
+    }
+    function downloadHere() {
+      const from = currentPlayMs();
+      if (from == null) {
+        dlStatus.textContent = 'Abre la grabación y descarga desde ese segundo.';
+        return;
+      }
+      setDl(from, from + 60 * 1000);
+      dlEdited = true;
+      return downloadSpan(isoZ(from), isoZ(from + 60 * 1000));
+    }
+    dlBtn.addEventListener('click', () => { downloadRange(); });
+    dlHere.addEventListener('click', () => { downloadHere(); });
+    async function playAt(hit) {
+      recZoom.reset();
+      const seq = ++recSeq;
+      const endMs = Date.parse(hit.item.end);
+      recStatus.textContent = 'Abriendo esa hora en calidad máxima…';
+      if (recVs) {
+        try { recVs.src = ''; recVs.remove(); } catch (_) {}
+        recVs = null;
+      }
+      try {
+        const r = await fetch('/api/recordings/play', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cam: recChannel,
+            start: isoZ(hit.ms),
+            end: isoZ(endMs),
+            name: hit.item.name || '',
+            size: hit.item.size || '',
+            codec: isIOS ? 'ios' : 'h264',
+          })
+        });
+        const j = await r.json();
+        if (seq !== recSeq) return;
+        if (!r.ok || !j.stream) throw new Error(j.detail || 'No se pudo abrir ese punto.');
+        const old = recPlayer.querySelector('.empty');
+        if (old) old.remove();
+        recVs = document.createElement('video-stream');
+        recVs.background = false;
+        recVs.dataset.rec = '1';
+        // iPhone no tiene MSE: mjpeg del DVR responde clave incorrecta y el visor pinta "error".
+        // En el teléfono se usa HLS. En la tele y el PC, MSE y si falla HLS.
+        recVs.mode = isIOS ? 'hls,mp4' : 'mse,hls,mp4';
+        recVs.media = 'video,audio';
+        recVs.visibilityCheck = false;
+        recVs.src = new URL(`${GO2RTC}/api/ws?src=${encodeURIComponent(j.stream)}`);
+        recPlayer.appendChild(recVs);
+        applyRecDar();
+        const recMo = new MutationObserver(() => {
+          const mode = recVs && recVs.querySelector('.mode');
+          if (mode && mode.textContent === 'error') {
+            recStatus.textContent = 'No se abrió el video. Prueba otra hora o descarga ese tramo.';
+          }
+          const v = recVs && recVs.querySelector('video');
+          if (v && !v.dataset.recArm) {
+            v.dataset.recArm = '1';
+            v.addEventListener('playing', () => {
+              if (seq !== recSeq) return;
+              clearTimeout(recVs._wait);
+              recStatus.textContent = hit.gap
+                ? 'No había video en ese punto. Sigue la grabación más cercana.'
+                : '−10 s y +10 s, o las flechas, saltan diez segundos.';
+            });
+          }
+        });
+        recMo.observe(recVs, { subtree: true, childList: true, characterData: true });
+        recVs._mo = recMo;
+        applyVideo(recVs);
+        const opened = j.opened ? Date.parse(j.opened) : hit.ms;
+        recPlayFrom = Number.isFinite(opened) ? opened : hit.ms;
+        recPlayAt = Date.now();
+        if (recTimer) clearInterval(recTimer);
+        recTimer = setInterval(placeHead, 500);
+        title.textContent = (streamCams.find(c => dvrChannel(c) === recChannel) || {}).name || 'Grabación';
+        subtitle.textContent = 'Grabación · HD · ' + fmtPlay(recPlayFrom);
+        recStatus.textContent = 'Cargando la grabación…';
+        recVs._wait = setTimeout(() => {
+          if (seq !== recSeq) return;
+          const v = recVs && recVs.querySelector('video');
+          if (v && v.readyState >= 2) return;
+          recStatus.textContent = 'La grabación no llegó. Prueba otra hora o descarga ese tramo.';
+        }, 12000);
+        placeHead();
+      } catch (err) {
+        if (seq !== recSeq) return;
+        recStatus.textContent = (err && err.message) ? err.message : 'No se pudo abrir ese punto.';
+      }
+    }
+    function seekRec(ms, immediate) {
+      if (recNudgeTimer) { clearTimeout(recNudgeTimer); recNudgeTimer = null; recNudgeMs = 0; }
+      if (!recData) return;
+      const hit = snap(ms);
+      if (!hit) { recStatus.textContent = 'Sin grabación en ese punto.'; return; }
+      recPlayFrom = hit.ms;
+      recPlayAt = 0;
+      placeHead();
+      if (recSeekTimer) clearTimeout(recSeekTimer);
+      if (immediate) playAt(hit);
+      else recSeekTimer = setTimeout(() => playAt(hit), 400);
+    }
+    function nudgeRec(deltaMs) {
+      if (!recData || recPlayFrom == null) {
+        recStatus.textContent = 'Abre una grabación para avanzar o retroceder 10 segundos.';
+        return;
+      }
+      if (!recNudgeTimer) recNudgeBase = currentPlayMs();
+      recNudgeMs += deltaMs;
+      const target = recNudgeBase + recNudgeMs;
+      recPlayFrom = target;
+      recPlayAt = 0;
+      placeHead();
+      const secs = Math.abs(Math.round(recNudgeMs / 1000));
+      const dir = recNudgeMs < 0 ? 'Retrocediendo' : 'Avanzando';
+      recStatus.textContent = dir + ' ' + secs + ' s · ' + fmtPlay(target);
+      if (recNudgeTimer) clearTimeout(recNudgeTimer);
+      recNudgeTimer = setTimeout(() => {
+        const ms = recNudgeBase + recNudgeMs;
+        recNudgeTimer = null;
+        recNudgeMs = 0;
+        seekRec(ms, true);
+      }, 280);
+    }
+    document.getElementById('recBack').addEventListener('click', () => nudgeRec(-10000));
+    document.getElementById('recFwd').addEventListener('click', () => nudgeRec(10000));
+    async function loadRec(pinMs) {
+      if (!recDate.value) return;
+      stopLive();
+      stopRec();
+      recStatus.textContent = 'Buscando grabaciones…';
+      const r = await fetch(`/api/recordings?cam=${encodeURIComponent(recChannel)}&date=${encodeURIComponent(recDate.value)}&days=${recSpan}`, { cache: 'no-store' });
+      const j = await r.json();
+      if (document.body.dataset.mode !== 'rec') return;
+      if (!r.ok) throw new Error(j.detail || j.error || r.status);
+      recData = j;
+      recPlayFrom = null;
+      recPlayAt = 0;
+      drawTimeline();
+      renderClips();
+      const items = j.items || [];
+      recStatus.textContent = items.length
+        ? items.length + ' tramo(s). Arrastra la barra entre horas y días.'
+        : 'Sin grabación en ese rango.';
+      if (!items.length) return;
+      const edge = Math.min(Date.parse(j.now), Date.parse(items[items.length - 1].end));
+      const at = Number.isFinite(pinMs)
+        ? pinMs
+        : (Number.isFinite(edge) ? edge - 60 * 1000 : Date.parse(items[items.length - 1].start));
+      if (!dlEdited && Number.isFinite(edge)) setDl(edge - 30 * 60 * 1000, edge);
+      seekRec(at, true);
+    }
+
+    document.getElementById('recSpan').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button');
+      if (!btn) return;
+      recSpan = Number(btn.dataset.days) || 1;
+      document.querySelectorAll('#recSpan button').forEach(b => b.classList.toggle('on', b === btn));
+      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+    });
+    recDate.addEventListener('change', () => {
+      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+    });
+    document.getElementById('recSearch').addEventListener('click', () => {
+      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+    });
+    tlBar.addEventListener('pointerdown', (ev) => {
+      if (!recData) return;
+      ev.preventDefault();
+      recDragging = true;
+      tlBar.setPointerCapture(ev.pointerId);
+      recPlayFrom = timeAt(ev);
+      recPlayAt = 0;
+      placeHead();
+    });
+    tlBar.addEventListener('pointermove', (ev) => {
+      if (!recDragging) return;
+      recPlayFrom = timeAt(ev);
+      placeHead();
+    });
+    function endDrag(ev) {
+      if (!recDragging) return;
+      recDragging = false;
+      seekRec(timeAt(ev), false);
+    }
+    tlBar.addEventListener('pointerup', endDrag);
+    tlBar.addEventListener('pointercancel', endDrag);
+
+    function showLive() {
+      if (document.body.classList.contains('ios-large')) setIosLarge(false);
+      stopRec();
+      document.body.dataset.mode = 'live';
+      document.getElementById('tabLive').classList.add('on');
+      document.getElementById('tabRec').classList.remove('on');
+      renderLive();
+    }
+    function showRec() {
+      if (document.body.classList.contains('ios-large')) setIosLarge(false);
+      stopLive();
+      document.body.dataset.mode = 'rec';
+      document.getElementById('tabRec').classList.add('on');
+      document.getElementById('tabLive').classList.remove('on');
+      const cam = focused();
+      recChannel = dvrChannel(cam) || dvrChannel(streamCams.find(c => dvrChannel(c))) || 1;
+      title.textContent = cam ? cam.name : 'Grabación';
+      subtitle.textContent = 'Grabación · HD';
+      renderRecChips();
+      loadRec().catch(err => { recStatus.textContent = 'No se pudo consultar el DVR.'; });
+    }
+    document.getElementById('tabLive').addEventListener('click', showLive);
+    document.getElementById('tabRec').addEventListener('click', showRec);
+
+    const archDlg = document.getElementById('archDlg');
+    const archStatus = document.getElementById('archStatus');
+    const archList = document.getElementById('archList');
+    let archMinutes = -300;
+
+    function partsAt(ms) {
+      const d = new Date(ms + archMinutes * 60000);
+      return {
+        y: String(d.getUTCFullYear()),
+        m: pad2(d.getUTCMonth() + 1),
+        d: pad2(d.getUTCDate()),
+        h: pad2(d.getUTCHours()),
+        min: pad2(d.getUTCMinutes()),
+        s: pad2(d.getUTCSeconds()),
+      };
+    }
+    function fmtAt(ms) {
+      const p = partsAt(ms);
+      return p.d + '/' + p.m + ' ' + p.h + ':' + p.min;
+    }
+    function renderArchive(data) {
+      if (typeof data.offsetMinutes === 'number') archMinutes = data.offsetMinutes;
+      archList.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      let oldest = null;
+      let newest = null;
+      for (const cam of data.cameras || []) {
+        const head = document.createElement('h3');
+        head.className = 'arch-cam';
+        const known = streamCams.find(c => dvrChannel(c) === cam.cam);
+        head.textContent = (known && known.name) || ('Cámara ' + pad2(cam.cam));
+        if (cam.truncated) head.textContent += ' · hay más en el disco';
+        frag.appendChild(head);
+        const items = (cam.items || []).slice().sort((a, b) => Date.parse(b.start) - Date.parse(a.start));
+        if (!items.length) {
+          const empty = document.createElement('p');
+          empty.className = 'arch-day';
+          empty.textContent = cam.error ? 'No se pudo leer este canal.' : 'Sin grabaciones en el disco.';
+          frag.appendChild(empty);
+          continue;
+        }
+        let day = '';
+        for (const it of items) {
+          const ms = Date.parse(it.start);
+          const end = Date.parse(it.end);
+          if (oldest == null || ms < oldest) oldest = ms;
+          if (newest == null || end > newest) newest = end;
+          const p = partsAt(ms);
+          const key = p.y + '-' + p.m + '-' + p.d;
+          if (key !== day) {
+            day = key;
+            const lab = document.createElement('p');
+            lab.className = 'arch-day';
+            lab.textContent = p.d + '/' + p.m + '/' + p.y;
+            frag.appendChild(lab);
+          }
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'arch-row';
+          const when = document.createElement('span');
+          when.textContent = p.h + ':' + p.min + ':' + p.s;
+          const dur = document.createElement('span');
+          dur.textContent = recDuration(it.start, it.end) || '—';
+          btn.append(when, dur);
+          btn.addEventListener('click', () => { openArchClip(cam.cam, it, key); });
+          frag.appendChild(btn);
+        }
+      }
+      archList.appendChild(frag);
+      const span = oldest != null ? (' Del ' + fmtAt(oldest) + ' al ' + fmtAt(newest) + '.') : '';
+      const total = Number(data.count) || 0;
+      archStatus.textContent = total
+        ? total + ' grabaciones en el DVR.' + span
+        : 'El DVR no tiene grabaciones en el disco.';
+    }
+    async function openArchive(fresh) {
+      if (document.body.classList.contains('ios-large')) setIosLarge(false);
+      if (!archDlg.open) archDlg.showModal();
+      archStatus.textContent = 'Buscando las grabaciones de las cámaras…';
+      archList.innerHTML = '';
+      try {
+        const r = await fetch('/api/recordings/archive' + (fresh ? '?fresh=1' : ''), { cache: 'no-store' });
+        const j = await r.json();
+        if (!archDlg.open) return;
+        if (!r.ok) throw new Error(j.detail || 'No se pudo leer el archivo.');
+        renderArchive(j);
+      } catch (err) {
+        if (!archDlg.open) return;
+        archStatus.textContent = (err && err.message) ? err.message : 'No se pudo leer el archivo.';
+      }
+    }
+    async function openArchClip(cam, item, day) {
+      if (archDlg.open) archDlg.close();
+      if (document.body.classList.contains('ios-large')) setIosLarge(false);
+      stopLive();
+      document.body.dataset.mode = 'rec';
+      document.getElementById('tabRec').classList.add('on');
+      document.getElementById('tabLive').classList.remove('on');
+      recChannel = cam;
+      const idx = streamCams.findIndex(c => dvrChannel(c) === cam);
+      if (idx >= 0) {
+        focus = idx;
+        sessionStorage.setItem('camIdx', String(focus));
+      }
+      recDate.value = day;
+      recSpan = 1;
+      document.querySelectorAll('#recSpan button').forEach(b => b.classList.toggle('on', Number(b.dataset.days) === 1));
+      const known = streamCams.find(c => dvrChannel(c) === cam);
+      title.textContent = known ? known.name : 'Grabación';
+      subtitle.textContent = 'Grabación · HD';
+      renderRecChips();
+      try {
+        await loadRec(Date.parse(item.start));
+      } catch (_) {
+        recStatus.textContent = 'No se pudo consultar el DVR.';
+      }
+    }
+    document.getElementById('archOpen').addEventListener('click', () => { openArchive(false); });
+    document.getElementById('archRefresh').addEventListener('click', () => { openArchive(true); });
+    document.getElementById('archClose').addEventListener('click', () => { archDlg.close(); });
+
+    document.addEventListener('visibilitychange', () => {
+      if (isTV) return;
+      if (document.hidden) {
+        stopLive();
+        if (recVs) { try { recVs.src = ''; } catch (_) {} }
+        return;
+      }
+      if (document.body.dataset.mode === 'live') renderLive();
+      else if (recPlayFrom != null && recData) {
+        const hit = snap(recPlayFrom);
+        if (hit) playAt(hit);
+      }
+      watchUnused();
+    });
+
+    function tick() {
+      const p = bogotaParts(new Date());
+      document.getElementById('clock').textContent = p.h + ':' + p.min;
+    }
+    tick();
+    setInterval(tick, 1000);
+    setInterval(() => { watchUnused().catch(() => {}); }, 15000);
+    probeEpoch += 1;
+    const bootEpoch = probeEpoch;
+    let bootFound = [];
+    try { await refreshInputs(); } catch (_) {}
+    try { bootFound = sortCams(await camsWithSignal()); } catch (_) { bootFound = []; }
+    if (bootEpoch === probeEpoch) {
+      signalCams = bootFound;
+      snapFocusToSignal();
+      renderLive();
+      if (document.body.dataset.mode === 'rec') renderRecChips();
+    }
+    signalReady = true;
+    if (isTV) stage.focus();
+  </script>
+</body>
+</html>

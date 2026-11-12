@@ -1,0 +1,38 @@
+# El host solo abre loopback. Dentro de la red del compose los puertos escuchan normal.
+# Para un teléfono en tu LAN cambia 127.0.0.1 por esa dirección de la LAN.
+# No uses 0.0.0.0 en un equipo con IP pública. No publiques el 8554.
+
+services:
+  go2rtc:
+    image: alexxit/go2rtc:1.9.9
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1984:1984"
+      - "127.0.0.1:8555:8555/tcp"
+      - "127.0.0.1:8555:8555/udp"
+    volumes:
+      - ./config/go2rtc.yaml:/config/go2rtc.yaml:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  visor:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8090"
+    env_file:
+      - .env
+    environment:
+      CAM_VIEWER_HOST: "0.0.0.0"
+      CAM_VIEWER_ROOT: /opt/visor
+      GO2RTC_URL: http://go2rtc:1984
+      GO2RTC_YAML: /etc/go2rtc/go2rtc.yaml
+    volumes:
+      - ./config/cameras.json:/opt/visor/cameras.json:ro
+      - ./config/go2rtc.yaml:/etc/go2rtc/go2rtc.yaml:ro
+    depends_on:
+      - go2rtc
+    read_only: true
+    tmpfs:
+      - /tmp

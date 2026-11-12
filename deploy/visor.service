@@ -1,0 +1,29 @@
+[Unit]
+Description=Visor, página y archivo del grabador
+After=network-online.target go2rtc.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=visor
+Group=visor
+Environment=CAM_VIEWER_HOST=127.0.0.1
+Environment=CAM_VIEWER_ROOT=/var/www/cam-viewer
+Environment=CAM_VIEWER_PORT=8090
+Environment=GO2RTC_URL=http://127.0.0.1:1984
+Environment=GO2RTC_YAML=/etc/go2rtc/go2rtc.yaml
+EnvironmentFile=-/etc/visor/visor.env
+WorkingDirectory=/var/www/cam-viewer
+ExecStart=/usr/bin/python3 /usr/local/bin/cam_dashboard.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/cam-viewer /var/backups
+LockPersonality=true
+RestrictSUIDSGID=true
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

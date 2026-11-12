@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Aviso de seguridad
+    url: https://github.com/007UnknownUsername77/D-NvrVisorHD/security/advisories/new
+    about: Un fallo que no deba verse en público va por un aviso privado.

@@ -1,0 +1,15 @@
+.env
+*.env
+!.env.example
+config/cameras.json
+config/go2rtc.yaml
+__pycache__/
+*.py[cod]
+.venv/
+# Grabaciones. No subas video.
+*.mp4
+*.m4s
+*.mkv
+*.ts
+*.jpeg
+*.jpg

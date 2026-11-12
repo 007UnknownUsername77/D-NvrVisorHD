@@ -1,0 +1,10 @@
+.git
+.env
+config/cameras.json
+config/go2rtc.yaml
+**/__pycache__
+**/*.pyc
+**/*.mp4
+**/*.ts
+**/*.m4s
+**/*.mkv
