@@ -16,6 +16,10 @@ The container installs the Debian `ffmpeg` package. It is not vendored. The lice
 
 The app image is `python:3.12-slim-bookworm`. Python is covered by the Python Software Foundation license.
 
+## App icon
+
+The icon is an original drawing for this app. Its camera follows a CC0 photograph by Paul Brennan, Public Domain Pictures image 91994. That photograph is not in this repository. CC0 does not require attribution.
+
 ## Recorders
 
 This project is not affiliated with Hikvision and does not ship a Hikvision SDK. Recording search speaks HTTP ISAPI to a recorder you operate. Live view is RTSP through go2rtc and is not limited to that brand.
