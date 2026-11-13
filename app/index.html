@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
-  <meta name="theme-color" content="#07080c" />
+  <meta name="theme-color" content="#03040a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="visor-version" content="0.3.1" />
+  <meta name="visor-version" content="0.3.2" />
   <meta name="apple-mobile-web-app-title" content="Visor" />
   <link rel="icon" href="./icon.png" type="image/png">
   <link rel="apple-touch-icon" href="./icon.png">
@@ -17,56 +17,60 @@
   <style>
     :root, html[data-theme="night"] {
       color-scheme: dark;
-      --bg: #07080c;
-      --panel: #10131b;
-      --card: #171b26;
-      --line: rgba(255,255,255,.08);
-      --text: #eef1f7;
-      --muted: #8e98ad;
-      --accent: #4c8dff;
-      --accent-2: #9ec0ff;
-      --rec: #ff6436;
-      --live: #3ee0a2;
-      --nav-bg: #0b0d13;
-      --btn-on: #1c305c;
-      --btn-line: #3d6ec9;
-      --track: #12151d;
-      --dialog: #10131b;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      /* Accepted palette. The five themes stay Night, Harbor, Pine, Amber, and Day. */
+      --bg: #03040a;
+      --panel: #080b12;
+      --card: #111623;
+      --line: rgba(148, 163, 184, 0.12);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #0ea5e9;
+      --accent-2: #38bdf8;
+      --rec: #ef4444;
+      --live: #22c55e;
+      --nav-bg: #06080f;
+      --btn-on: rgba(14, 165, 233, 0.16);
+      --btn-line: #0ea5e9;
+      --track: #0c1018;
+      --dialog: #080b12;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
       --nav: calc(58px + env(safe-area-inset-bottom));
-      --top: calc(50px + env(safe-area-inset-top));
+      --top: calc(56px + env(safe-area-inset-top));
+      --sidebar-w: 84px;
     }
     html[data-theme="harbor"] {
       color-scheme: dark;
-      --bg: #061018; --panel: #0c1824; --card: #122232;
-      --line: rgba(180,210,230,.14); --text: #e7f2f8; --muted: #8eabbd;
-      --accent: #3cb6e0; --accent-2: #9adcf2;
-      --nav-bg: #08141e; --btn-on: #14384a; --btn-line: #2f86a8;
-      --track: #0e1c28; --dialog: #0c1824;
+      --bg: #020b14; --panel: #061018; --card: #0e1b2c;
+      --line: rgba(148, 195, 230, 0.14); --text: #e8f4fc; --muted: #8fb3d3;
+      --accent: #22d3ee; --accent-2: #67e8f9;
+      --nav-bg: #040e18; --btn-on: rgba(34, 211, 238, 0.15); --btn-line: #22d3ee;
+      --track: #081420; --dialog: #061018;
     }
     html[data-theme="pine"] {
       color-scheme: dark;
-      --bg: #07110c; --panel: #0e1b14; --card: #14261c;
-      --line: rgba(170,210,180,.14); --text: #e7f6ec; --muted: #8fb39a;
-      --accent: #3cbe7a; --accent-2: #b6ebc8;
-      --nav-bg: #08140e; --btn-on: #145032; --btn-line: #2f9a62;
-      --track: #102016; --dialog: #0e1b14;
+      --bg: #03100a; --panel: #05140e; --card: #0e2419;
+      --line: rgba(134, 200, 160, 0.14); --text: #e8f7ed; --muted: #8fc6a3;
+      --accent: #34d399; --accent-2: #6ee7b7;
+      --nav-bg: #04120c; --btn-on: rgba(52, 211, 153, 0.15); --btn-line: #34d399;
+      --track: #081912; --dialog: #05140e;
     }
     html[data-theme="amber"] {
       color-scheme: dark;
-      --bg: #120e08; --panel: #1c150c; --card: #2a1e10;
-      --line: rgba(230,190,120,.16); --text: #f8f0e2; --muted: #c2aa86;
-      --accent: #e0a040; --accent-2: #f0cf96; --rec: #ff7848; --live: #d7b15a;
-      --nav-bg: #160f09; --btn-on: #5a3a14; --btn-line: #c4842a;
-      --track: #24180e; --dialog: #1c150c;
+      --bg: #140e06; --panel: #19120a; --card: #2d2114;
+      --line: rgba(230, 190, 120, 0.16); --text: #fbf4e8; --muted: #d4b688;
+      --accent: #f59e0b; --accent-2: #fbbf24; --rec: #f97316; --live: #fbbf24;
+      --nav-bg: #1a1209; --btn-on: rgba(245, 158, 11, 0.15); --btn-line: #f59e0b;
+      --track: #21170d; --dialog: #19120a;
     }
     html[data-theme="day"] {
       color-scheme: light;
-      --bg: #f4f1ea; --panel: #fffdf8; --card: #ffffff;
-      --line: rgba(28,25,21,.12); --text: #1c1915; --muted: #5c6570;
-      --accent: #1d4e89; --accent-2: #1d4e89; --rec: #c2410c; --live: #0f766e;
-      --nav-bg: #fffdf8; --btn-on: #dbe7f6; --btn-line: #1d4e89;
-      --track: #e6e1d6; --dialog: #fffdf8;
+      --bg: #f4f6f8; --panel: #ffffff; --card: #ffffff;
+      --line: rgba(30, 41, 59, 0.10); --text: #0f172a; --muted: #475569;
+      --accent: #0369a1; --accent-2: #0284c7;
+      --rec: #dc2626; --live: #059669;
+      --nav-bg: #ffffff; --btn-on: rgba(3, 105, 161, 0.10); --btn-line: #0369a1;
+      --track: #e2e8f0; --dialog: #ffffff;
     }
     * { box-sizing: border-box; }
     html, body {
@@ -77,28 +81,66 @@
     }
     body.phone .app { height: var(--app-h, 100dvh); }
     button, input { font: inherit; color: inherit; }
-    .app { height: 100dvh; display: flex; flex-direction: column; }
+    .app { height: 100dvh; display: flex; flex-direction: row; }
+
+    /* Sidebar (desktop) */
+    .sidebar {
+      display: none; flex: none; width: var(--sidebar-w);
+      background: var(--nav-bg); border-right: 1px solid var(--line);
+      flex-direction: column; align-items: center; padding: 14px 0;
+      gap: 18px;
+    }
+    .sidebar-mark {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      color: var(--text); font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    }
+    .sidebar-mark img {
+      width: 32px; height: 32px; border-radius: 10px; display: block;
+      background: var(--card); border: 1px solid var(--line);
+    }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 0 10px; }
+    .sidebar-btn {
+      width: 100%; border: 0; border-radius: 12px; background: transparent;
+      color: var(--muted); cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px; padding: 10px 0; font-size: 10px; font-weight: 650;
+      transition: background 160ms ease, color 160ms ease;
+    }
+    .sidebar-btn svg { width: 22px; height: 22px; }
+    .sidebar-btn.on { background: var(--btn-on); color: var(--accent-2); box-shadow: inset 0 0 0 1px var(--btn-line); }
+
+    /* Main workspace */
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100dvh; }
     header {
       height: var(--top); padding: env(safe-area-inset-top) 14px 0;
       display: flex; align-items: center; gap: 10px; flex: none;
+      background: var(--panel); border-bottom: 1px solid var(--line);
     }
     header .mark {
-      width: 28px; height: 28px; border-radius: 8px; flex: none; overflow: hidden;
+      width: 32px; height: 32px; border-radius: 10px; flex: none; overflow: hidden;
+      background: var(--card); border: 1px solid var(--line);
     }
-    header .mark img { width: 28px; height: 28px; display: block; border-radius: 8px; }
+    header .mark img { width: 32px; height: 32px; display: block; border-radius: 10px; }
     .theme-pick { flex: none; }
     .theme-pick select {
-      height: 28px; max-width: 7.2rem; border-radius: 8px; border: 1px solid var(--line);
-      background: var(--card); color: var(--text); padding: 0 4px; font-size: 12px;
+      height: 30px; max-width: 7.6rem; border-radius: 8px; border: 1px solid var(--line);
+      background: var(--card); color: var(--text); padding: 0 8px; font-size: 12px;
+      font-family: var(--font-mono);
     }
     header .titles { min-width: 0; flex: 1; }
-    header strong { display: block; font-size: 16px; font-weight: 650; letter-spacing: -.02em; }
+    header strong { display: block; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
     header span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    header .clock { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    header .clock { color: var(--accent-2); font-size: 13px; font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
     .view { flex: 1; min-height: 0; display: none; flex-direction: column; }
     body[data-mode="live"] #liveView,
     body[data-mode="rec"] #recView { display: flex; }
+
+    .live-layout {
+      flex: 1; min-height: 0; display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto auto;
+    }
 
     .stage-wrap { flex: 1; min-height: 0; padding: 0 8px; position: relative; }
     .stage {
@@ -268,13 +310,23 @@
     .shot.on .thumb { border-color: var(--accent); }
     .shot small { display: block; margin-top: 4px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .tools { padding-top: 4px; padding-bottom: 8px; align-items: center; }
+    /* Enterprise camera panel (desktop) */
+    #liveView .film {
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+    }
+
+    .tools {
+      padding: 10px 12px; align-items: center;
+      background: var(--panel); border-top: 1px solid var(--line);
+    }
     .btn {
-      flex: 0 0 auto; height: 36px; padding: 0 12px; border-radius: 999px;
+      flex: 0 0 auto; height: 36px; padding: 0 14px; border-radius: 999px;
       border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer;
+      font-size: 13px; font-weight: 600; transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
     }
     .btn.on { background: var(--btn-on); border-color: var(--btn-line); color: var(--accent-2); }
-    .hint { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .hint { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; font-family: var(--font-mono); }
 
     .rec-head { flex: none; padding-bottom: 4px; }
     .chips { padding-bottom: 0; }
@@ -429,48 +481,104 @@
     }
     nav button.on { color: var(--accent-2); }
     nav svg { width: 22px; height: 22px; }
+
+    /*
+      Accepted from the proposal: the palette, the desktop sidebar, and the
+      camera list beside the picture. Playback is unchanged.
+      Corrected: the tool row stays in the video column. The proposed absolute
+      bar had no positioned parent, so it sat on the sidebar. The list scrolls
+      on the axis it uses. Colors come from the theme, including Amber and Day.
+      A TV keeps the bottom bar and the horizontal list.
+    */
+    @media (min-width: 768px) {
+      body:not(.tv) .sidebar { display: flex; }
+      body:not(.tv) header .mark { display: none; }
+      body:not(.tv) nav { display: none; }
+    }
+    @media (min-width: 1024px) {
+      body:not(.tv) #liveView .live-layout {
+        grid-template-columns: minmax(0, 1fr) 220px;
+        grid-template-rows: minmax(0, 1fr) auto;
+      }
+      body:not(.tv) #liveView .stage-wrap { grid-column: 1; grid-row: 1; padding: 0 12px; }
+      body:not(.tv) #liveView .tools { grid-column: 1; grid-row: 2; }
+      body:not(.tv) #liveView .film {
+        grid-column: 2; grid-row: 1 / span 2;
+        flex-direction: column; overflow-x: hidden; overflow-y: auto;
+        width: auto; border-top: 0; border-left: 1px solid var(--line);
+        border-radius: 16px; padding: 10px; gap: 10px; background: var(--panel);
+      }
+      body:not(.tv) #liveView .shot { width: 100%; }
+      body:not(.tv) #liveView .shot .thumb { height: 96px; border-radius: 10px; }
+    }
+    @media (min-width: 1280px) {
+      body:not(.tv) #liveView .live-layout { grid-template-columns: minmax(0, 1fr) 260px; }
+      body:not(.tv) #liveView .shot .thumb { height: 120px; }
+    }
+    body.ios-large .sidebar { opacity: 0; pointer-events: none; }
   </style>
 </head>
 <body data-mode="live">
   <div class="app">
-    <header>
-      <div class="mark" aria-hidden="true"><img src="./icon.png" alt="" width="28" height="28"></div>
-      <div class="titles">
-        <strong id="title">Cameras</strong>
-        <span id="subtitle">Live</span>
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="sidebar-mark">
+        <img src="./icon.png" alt="" width="32" height="32">
+        <span>Visor</span>
       </div>
-      <label class="theme-pick"><select id="themePick" aria-label="Theme">
-        <option value="night">Night</option>
-        <option value="harbor">Harbor</option>
-        <option value="pine">Pine</option>
-        <option value="amber">Amber</option>
-        <option value="day">Day</option>
-      </select></label>
-      <div class="clock" id="clock">--:--</div>
-    </header>
+      <div class="sidebar-nav">
+        <button type="button" class="sidebar-btn on" data-target="live" aria-label="Live">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          <span>Live</span>
+        </button>
+        <button type="button" class="sidebar-btn" data-target="rec" aria-label="Recording">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
+          <span>Recording</span>
+        </button>
+      </div>
+    </aside>
 
-    <section class="view" id="liveView">
-      <div class="stage-wrap">
-        <div class="stage one" id="stage" tabindex="0"></div>
-        <div class="zoom-ctl" id="liveZoom">
-          <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
-          <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+    <div class="main">
+      <header>
+        <div class="mark" aria-hidden="true"><img src="./icon.png" alt="" width="32" height="32"></div>
+        <div class="titles">
+          <strong id="title">Cameras</strong>
+          <span id="subtitle">Live</span>
         </div>
-        <button class="btn live-fs" id="liveFs" type="button">Screen</button>
-      </div>
-      <div class="film" id="film"></div>
-      <div class="tools">
-        <button class="btn on" id="btnHd" type="button">HD</button>
-        <button class="btn" id="btnGrid" type="button">Mosaic</button>
-        <button class="btn" id="btnMute" type="button">Mute</button>
-        <button class="btn" id="btnShot" type="button">Shot</button>
-        <button class="btn" id="btnFs" type="button">Screen</button>
-        <span class="hint" id="liveHint">HD · 1 channel</span>
-      </div>
-    </section>
+        <label class="theme-pick"><select id="themePick" aria-label="Theme">
+          <option value="night">Night</option>
+          <option value="harbor">Harbor</option>
+          <option value="pine">Pine</option>
+          <option value="amber">Amber</option>
+          <option value="day">Day</option>
+        </select></label>
+        <div class="clock" id="clock">--:--</div>
+      </header>
 
-    <section class="view" id="recView">
-      <div class="rec-head">
+      <div class="workspace">
+        <section class="view" id="liveView">
+          <div class="live-layout">
+              <div class="stage-wrap">
+                <div class="stage one" id="stage" tabindex="0"></div>
+                <div class="zoom-ctl" id="liveZoom">
+                  <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+                  <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+                </div>
+                <button class="btn live-fs" id="liveFs" type="button">Screen</button>
+              </div>
+              <div class="film" id="film"></div>
+            <div class="tools">
+              <button class="btn on" id="btnHd" type="button">HD</button>
+              <button class="btn" id="btnGrid" type="button">Mosaic</button>
+              <button class="btn" id="btnMute" type="button">Mute</button>
+              <button class="btn" id="btnShot" type="button">Shot</button>
+              <button class="btn" id="btnFs" type="button">Screen</button>
+              <span class="hint" id="liveHint">HD · 1 channel</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="recView">
+          <div class="rec-head">
         <div class="chips" id="recChips"></div>
         <div class="rec-controls">
           <input type="date" id="recDate" />
@@ -520,6 +628,8 @@
       </div>
       <ul class="clips" id="clipList"></ul>
     </section>
+      </div><!-- /.workspace -->
+    </div><!-- /.main -->
 
     <button type="button" class="ios-close" id="iosClose" aria-label="Close">×</button>
     <nav>
@@ -553,7 +663,7 @@
       return `http://${h}:1984`;
     })();
 
-    const THEMES = { night: '#07080c', harbor: '#061018', pine: '#07110c', amber: '#120e08', day: '#f4f1ea' };
+    const THEMES = { night: '#03040a', harbor: '#020b14', pine: '#03100a', amber: '#140e06', day: '#f4f6f8' };
     function applyTheme(name) {
       const theme = Object.prototype.hasOwnProperty.call(THEMES, name) ? name : 'night';
       document.documentElement.dataset.theme = theme;
@@ -1007,8 +1117,16 @@
       film.querySelectorAll('.shot').forEach(b => b.classList.toggle('on', b.dataset.id === id));
       const on = film.querySelector('.shot.on');
       if (on) {
-        const left = on.offsetLeft - (film.clientWidth - on.clientWidth) / 2;
-        film.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+        const vertical = getComputedStyle(film).flexDirection === 'column';
+        const filmRect = film.getBoundingClientRect();
+        const rect = on.getBoundingClientRect();
+        if (vertical) {
+          const delta = rect.top - filmRect.top - (film.clientHeight - rect.height) / 2;
+          film.scrollTo({ top: Math.max(0, film.scrollTop + delta), behavior: 'smooth' });
+        } else {
+          const delta = rect.left - filmRect.left - (film.clientWidth - rect.width) / 2;
+          film.scrollTo({ left: Math.max(0, film.scrollLeft + delta), behavior: 'smooth' });
+        }
       }
     }
 
@@ -2344,6 +2462,22 @@
     }
     signalReady = true;
     if (isTV) stage.focus();
+
+    // Same tabs as the bottom bar. This does not start playback on its own.
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.target;
+        const targetBtn = document.getElementById(target === 'live' ? 'tabLive' : 'tabRec');
+        if (targetBtn) targetBtn.click();
+      });
+    });
+    const sidebarObserver = new MutationObserver(() => {
+      const mode = document.body.dataset.mode;
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        btn.classList.toggle('on', btn.dataset.target === mode);
+      });
+    });
+    sidebarObserver.observe(document.body, { attributes: true, attributeFilter: ['data-mode'] });
   </script>
 </body>
 </html>
