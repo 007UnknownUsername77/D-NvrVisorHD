@@ -2,6 +2,8 @@
 
 The interface and the user-facing text are English. A new comment is one line, and only when the reason is not visible in the code.
 
+A change reaches `main` through a pull request. The repository owner reviews it.
+
 ## Before a pull request
 
 From the repository root:
