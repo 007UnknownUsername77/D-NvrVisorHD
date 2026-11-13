@@ -19,7 +19,7 @@ Live view works for any camera go2rtc can open. Recording, today, works for a Hi
 
 ## Version
 
-Public app **0.3.1**. See [CHANGELOG.md](CHANGELOG.md). The lab viewer is a separate build and it is not this tree.
+Public app **0.3.1**. See [CHANGELOG.md](CHANGELOG.md).
 
 ## What you need
 
