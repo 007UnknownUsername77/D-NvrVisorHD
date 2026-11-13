@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="visor-version" content="0.3.1" />
+  <meta name="visor-version" content="0.3.2" />
   <meta name="apple-mobile-web-app-title" content="Visor" />
   <link rel="icon" href="./icon.png" type="image/png">
   <link rel="apple-touch-icon" href="./icon.png">
@@ -17,7 +17,7 @@
   <style>
     :root, html[data-theme="night"] {
       color-scheme: dark;
-      /* Enterprise Security Center palette */
+      /* Accepted palette. The five themes stay Night, Harbor, Pine, Amber, and Day. */
       --bg: #03040a;
       --panel: #080b12;
       --card: #111623;
@@ -37,7 +37,7 @@
       --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
       --nav: calc(58px + env(safe-area-inset-bottom));
       --top: calc(56px + env(safe-area-inset-top));
-      --sidebar-w: 72px;
+      --sidebar-w: 84px;
     }
     html[data-theme="harbor"] {
       color-scheme: dark;
@@ -59,7 +59,7 @@
       color-scheme: dark;
       --bg: #140e06; --panel: #19120a; --card: #2d2114;
       --line: rgba(230, 190, 120, 0.16); --text: #fbf4e8; --muted: #d4b688;
-      --accent: #f59e0b; --accent-2: #fbbf24;
+      --accent: #f59e0b; --accent-2: #fbbf24; --rec: #f97316; --live: #fbbf24;
       --nav-bg: #1a1209; --btn-on: rgba(245, 158, 11, 0.15); --btn-line: #f59e0b;
       --track: #21170d; --dialog: #19120a;
     }
@@ -136,9 +136,11 @@
     body[data-mode="live"] #liveView,
     body[data-mode="rec"] #recView { display: flex; }
 
-    /* Live enterprise layout */
-    .live-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .stage-area { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
+    .live-layout {
+      flex: 1; min-height: 0; display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto auto;
+    }
 
     .stage-wrap { flex: 1; min-height: 0; padding: 0 8px; position: relative; }
     .stage {
@@ -480,35 +482,40 @@
     nav button.on { color: var(--accent-2); }
     nav svg { width: 22px; height: 22px; }
 
-    /* Responsive Enterprise layout */
+    /*
+      Accepted from the proposal: the palette, the desktop sidebar, and the
+      camera list beside the picture. Playback is unchanged.
+      Corrected: the tool row stays in the video column. The proposed absolute
+      bar had no positioned parent, so it sat on the sidebar. The list scrolls
+      on the axis it uses. Colors come from the theme, including Amber and Day.
+      A TV keeps the bottom bar and the horizontal list.
+    */
     @media (min-width: 768px) {
-      .sidebar { display: flex; }
-      header .mark { display: none; }
-      nav { display: none; }
-      .app { height: 100dvh; }
+      body:not(.tv) .sidebar { display: flex; }
+      body:not(.tv) header .mark { display: none; }
+      body:not(.tv) nav { display: none; }
     }
     @media (min-width: 1024px) {
-      .stage-wrap { padding: 0 12px; }
-      .live-layout { flex-direction: row; }
-      .stage-area { flex-direction: row; flex: 1; padding: 12px 0; gap: 12px; }
-      .stage-wrap { flex: 1; padding: 0; }
-      #liveView .film {
-        width: 220px; flex-direction: column; overflow-x: hidden; overflow-y: auto;
-        border-top: 0; border-left: 1px solid var(--line); border-radius: 16px;
-        padding: 10px; gap: 10px; background: var(--panel);
+      body:not(.tv) #liveView .live-layout {
+        grid-template-columns: minmax(0, 1fr) 220px;
+        grid-template-rows: minmax(0, 1fr) auto;
       }
-      .shot { width: 100%; }
-      .shot .thumb { height: 120px; border-radius: 10px; }
-      .tools {
-        position: absolute; bottom: 16px; left: 16px; z-index: 5;
-        background: rgba(3, 4, 10, 0.82); backdrop-filter: blur(10px);
-        border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px;
+      body:not(.tv) #liveView .stage-wrap { grid-column: 1; grid-row: 1; padding: 0 12px; }
+      body:not(.tv) #liveView .tools { grid-column: 1; grid-row: 2; }
+      body:not(.tv) #liveView .film {
+        grid-column: 2; grid-row: 1 / span 2;
+        flex-direction: column; overflow-x: hidden; overflow-y: auto;
+        width: auto; border-top: 0; border-left: 1px solid var(--line);
+        border-radius: 16px; padding: 10px; gap: 10px; background: var(--panel);
       }
+      body:not(.tv) #liveView .shot { width: 100%; }
+      body:not(.tv) #liveView .shot .thumb { height: 96px; border-radius: 10px; }
     }
     @media (min-width: 1280px) {
-      #liveView .film { width: 260px; }
-      .shot .thumb { height: 145px; }
+      body:not(.tv) #liveView .live-layout { grid-template-columns: minmax(0, 1fr) 260px; }
+      body:not(.tv) #liveView .shot .thumb { height: 120px; }
     }
+    body.ios-large .sidebar { opacity: 0; pointer-events: none; }
   </style>
 </head>
 <body data-mode="live">
@@ -518,16 +525,16 @@
         <img src="./icon.png" alt="" width="32" height="32">
         <span>Visor</span>
       </div>
-      <nav class="sidebar-nav">
+      <div class="sidebar-nav">
         <button type="button" class="sidebar-btn on" data-target="live" aria-label="Live">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
           <span>Live</span>
         </button>
         <button type="button" class="sidebar-btn" data-target="rec" aria-label="Recording">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
-          <span>Rec</span>
+          <span>Recording</span>
         </button>
-      </nav>
+      </div>
     </aside>
 
     <div class="main">
@@ -550,7 +557,6 @@
       <div class="workspace">
         <section class="view" id="liveView">
           <div class="live-layout">
-            <div class="stage-area">
               <div class="stage-wrap">
                 <div class="stage one" id="stage" tabindex="0"></div>
                 <div class="zoom-ctl" id="liveZoom">
@@ -560,7 +566,6 @@
                 <button class="btn live-fs" id="liveFs" type="button">Screen</button>
               </div>
               <div class="film" id="film"></div>
-            </div>
             <div class="tools">
               <button class="btn on" id="btnHd" type="button">HD</button>
               <button class="btn" id="btnGrid" type="button">Mosaic</button>
@@ -1112,8 +1117,16 @@
       film.querySelectorAll('.shot').forEach(b => b.classList.toggle('on', b.dataset.id === id));
       const on = film.querySelector('.shot.on');
       if (on) {
-        const left = on.offsetLeft - (film.clientWidth - on.clientWidth) / 2;
-        film.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+        const vertical = getComputedStyle(film).flexDirection === 'column';
+        const filmRect = film.getBoundingClientRect();
+        const rect = on.getBoundingClientRect();
+        if (vertical) {
+          const delta = rect.top - filmRect.top - (film.clientHeight - rect.height) / 2;
+          film.scrollTo({ top: Math.max(0, film.scrollTop + delta), behavior: 'smooth' });
+        } else {
+          const delta = rect.left - filmRect.left - (film.clientWidth - rect.width) / 2;
+          film.scrollTo({ left: Math.max(0, film.scrollLeft + delta), behavior: 'smooth' });
+        }
       }
     }
 
@@ -2450,7 +2463,7 @@
     signalReady = true;
     if (isTV) stage.focus();
 
-    // Sidebar navigation mirrors the bottom tab bar without duplicating handlers
+    // Same tabs as the bottom bar. This does not start playback on its own.
     document.querySelectorAll('.sidebar-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.target;
