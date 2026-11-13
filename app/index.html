@@ -152,10 +152,9 @@
       grid-auto-rows: minmax(0, 1fr);
       gap: 3px; background: #000; padding: 3px;
     }
-    .cell { position: relative; width: 100%; height: 100%; background: #05060a; min-height: 0; overflow: hidden; }
-    .stage.grid .cell { border-radius: 10px; }
+    .cell { position: relative; width: 100%; height: 100%; background: var(--track); min-height: 0; overflow: hidden; }
+    .stage.grid .cell { border-radius: 10px; border: 1px solid var(--line); }
     .stage.grid .cell.on { outline: 2px solid var(--accent-2); outline-offset: -2px; }
-    .stage.grid .tag { left: 6px; top: 6px; padding: 2px 6px; font-size: 11px; }
     .cell video-stream, .cell video, .rec-player video-stream, .rec-player video {
       width: 100% !important; height: 100% !important; display: block; background: #000;
       object-fit: contain;
@@ -177,10 +176,8 @@
     body.phone .film,
     body.phone .tools,
     body.phone nav,
-    body.phone .rec-head,
-    body.phone .timeline,
-    body.phone .clips,
-    body.phone .dl-box,
+    body.phone .rec-topbar,
+    body.phone .rec-side,
     body.phone .rec-status {
       transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -188,10 +185,8 @@
     body.ios-large .film,
     body.ios-large .tools,
     body.ios-large nav,
-    body.ios-large .rec-head,
-    body.ios-large .timeline,
-    body.ios-large .clips,
-    body.ios-large .dl-box,
+    body.ios-large .rec-topbar,
+    body.ios-large .rec-side,
     body.ios-large .rec-status {
       opacity: 0;
       pointer-events: none;
@@ -258,10 +253,8 @@
       body.phone .film,
       body.phone .tools,
       body.phone nav,
-      body.phone .rec-head,
-      body.phone .timeline,
-      body.phone .clips,
-      body.phone .dl-box,
+      body.phone .rec-topbar,
+      body.phone .rec-side,
       body.phone .rec-status,
       body.phone .stage-wrap,
       body.phone .rec-player,
@@ -270,23 +263,28 @@
       .ios-close { transition: none; }
       .dl-progress.wait .dl-progress-bar { animation: none; width: 100%; opacity: .45; }
     }
-    .cell .tag, .hud-name {
-      position: absolute; z-index: 2; left: 10px; top: 10px;
-      background: rgba(0,0,0,.55);
-      border-radius: 999px; padding: 4px 8px; font-size: 12px;
-      display: flex; gap: 6px; align-items: center;
+    .cell .tag {
+      position: absolute; z-index: 2; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,.72));
+      padding: 24px 10px 8px; font-size: 12px;
+      display: flex; align-items: center; gap: 8px;
+      color: #fff; pointer-events: none;
     }
+    .cell .tag { justify-content: space-between; }
+    .stage.grid .tag { top: auto; padding: 18px 8px 6px; font-size: 11px; }
     body.tv button:focus, body.tv .stage:focus {
       outline: 3px solid var(--accent-2); outline-offset: 2px;
     }
     body.tv .btn, body.tv .chip, body.tv .shot { min-height: 48px; }
     body.tv .shot { width: 132px; }
     body.tv .thumb { height: 72px; display: grid; place-items: center; font-size: 18px; font-weight: 700; }
-    .cell .tag b, .pill {
+    .cell .tag b, .pill, .badge {
       font-size: 10px; font-weight: 700; letter-spacing: .04em;
-      color: #04130c; background: var(--live); border-radius: 999px; padding: 1px 6px;
+      text-transform: uppercase;
+      color: #04130c; background: var(--live); border-radius: 999px; padding: 2px 6px;
+      flex: none; pointer-events: auto;
     }
-    .pill.sub { background: #c9d4ea; color: #121722; }
+    .cell .tag b.sub, .badge.sub { background: #c9d4ea; color: #121722; }
     .empty {
       position: absolute; inset: 0; display: grid; place-items: center;
       color: var(--muted); font-size: 14px; text-align: center; padding: 20px;
@@ -298,15 +296,22 @@
     }
     .film::-webkit-scrollbar, .tools::-webkit-scrollbar, .chips::-webkit-scrollbar { display: none; }
     .shot {
-      flex: 0 0 auto; width: 92px; border: 0; padding: 0; background: transparent; text-align: left; color: var(--muted);
+      flex: 0 0 auto; width: 92px; border: 0; padding: 6px; border-radius: 12px;
+      background: transparent; text-align: left; color: var(--muted);
+      cursor: pointer; display: flex; flex-direction: column; gap: 6px;
+      transition: background 160ms ease, color 160ms ease, transform 160ms ease;
     }
+    .shot:active { transform: scale(0.97); }
     .shot .thumb {
-      height: 54px; border-radius: 10px; background: #0c0e14 center/cover no-repeat;
-      border: 2px solid transparent; overflow: hidden;
+      height: 54px; border-radius: 10px; background: var(--track) center/cover no-repeat;
+      border: 2px solid transparent; overflow: hidden; position: relative;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
     }
-    .shot.on { color: var(--text); }
-    .shot.on .thumb { border-color: var(--accent); }
-    .shot small { display: block; margin-top: 4px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .shot.on { color: var(--text); background: var(--btn-on); box-shadow: inset 0 0 0 1px var(--btn-line); }
+    .shot.on .thumb { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(14, 165, 233, 0.12); }
+    .shot-info { display: flex; flex-direction: column; gap: 2px; padding: 0 2px; }
+    .shot-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .shot-meta { font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
 
     /* Enterprise camera panel (desktop) */
     #liveView .film {
@@ -326,22 +331,58 @@
     .btn.on { background: var(--btn-on); border-color: var(--btn-line); color: var(--accent-2); }
     .hint { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; font-family: var(--font-mono); }
 
-    .rec-head { flex: none; padding-bottom: 4px; }
+    /* Recording view - Enterprise Security Center */
+    .rec-topbar {
+      height: auto;
+      flex: none;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line);
+    }
+    .rec-brand {
+      display: flex; align-items: center; gap: 10px; min-width: 0;
+    }
+    .rec-icon {
+      width: 34px; height: 34px; border-radius: 10px; flex: none;
+      display: grid; place-items: center; background: var(--btn-on); color: var(--accent-2);
+      border: 1px solid var(--btn-line);
+    }
+    .rec-icon svg { width: 18px; height: 18px; }
+    .rec-brand strong { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+    .rec-topbar-sub { font-size: 11px; color: var(--muted); }
+    .rec-topbar-controls {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+    }
+    .rec-topbar-controls .chips { padding: 0; }
     .chips { padding-bottom: 0; }
     .chip, .span-row button {
       flex: 0 0 auto; height: 34px; padding: 0 12px; border-radius: 999px;
       border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer;
     }
     .chip.on, .span-row button.on { color: var(--text); border-color: var(--btn-line); background: var(--btn-on); }
-    .rec-controls { display: flex; gap: 8px; align-items: center; padding: 6px 12px 0; flex: none; flex-wrap: wrap; }
-    .rec-controls input[type="date"] {
+    .rec-date-wrap input[type="date"] {
       height: 34px; border-radius: 999px; border: 1px solid var(--line);
       background: var(--card); padding: 0 10px; color-scheme: inherit;
     }
+    body.tv .rec-date-wrap input { min-height: 48px; }
+
+    .rec-workspace {
+      flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px;
+      padding: 12px; overflow: auto;
+    }
+    .rec-main { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
     .rec-player {
-      flex: 1; min-height: 120px; margin: 8px 8px 0; border-radius: 16px; overflow: hidden;
+      flex: 1; min-height: 160px; border-radius: 16px; overflow: hidden;
       background: #000; position: relative; border: 1px solid var(--line); touch-action: none;
     }
+    .rec-player-hud {
+      position: absolute; z-index: 5; left: 8px; right: 8px; bottom: 8px;
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 8px;
+      pointer-events: none;
+    }
+    .rec-player-hud > * { pointer-events: auto; }
+    .rec-skip { display: flex; gap: 8px; }
+    .rec-skip .btn { height: 40px; min-width: 72px; padding: 0 14px; }
+    .btn.rec-fs { height: 40px; padding: 0 16px; }
     .zoom-ctl {
       position: absolute; z-index: 6; top: 8px; right: 8px;
       display: flex; gap: 6px;
@@ -357,31 +398,51 @@
       right: calc(8px + env(safe-area-inset-right));
     }
     body.tv .zoom-ctl button { width: 48px; height: 48px; font-size: 24px; }
-    .stage video-stream, .rec-player video-stream { transform-origin: center center; }
-    .live-fs, .rec-fs { position: absolute; z-index: 7; right: 8px; bottom: 8px; }
-    body.ios-large .live-fs,
-    body.ios-large .rec-fs {
+    .live-fs { position: absolute; z-index: 7; right: 8px; bottom: 8px; }
+    body.ios-large .live-fs {
       right: calc(8px + env(safe-area-inset-right));
       bottom: calc(8px + env(safe-area-inset-bottom));
       opacity: 1; pointer-events: auto;
     }
-    .rec-skip {
-      position: absolute; z-index: 6; left: 8px; bottom: 8px;
-      display: flex; gap: 8px;
+    .stage video-stream, .rec-player video-stream { transform-origin: center center; }
+
+    .rec-status {
+      flex: none; color: var(--muted); font-size: 12px; padding: 0 2px; min-height: 18px;
+      font-family: var(--font-mono);
     }
-    .rec-skip .btn { height: 44px; min-width: 72px; padding: 0 14px; }
-    body.ios-large .rec-skip {
-      left: calc(8px + env(safe-area-inset-left));
-      bottom: calc(8px + env(safe-area-inset-bottom));
+
+    .rec-side {
+      display: flex; flex-direction: column; gap: 10px; min-height: 0;
     }
-    .rec-status { flex: none; color: var(--muted); font-size: 12px; padding: 6px 14px 0; min-height: 18px; }
+    .rec-panel {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+      padding: 12px; display: flex; flex-direction: column; gap: 10px; min-height: 0;
+    }
+    .rec-panel-head {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    }
+    .rec-panel-head strong { font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+    .rec-panel-hint { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+    .dl-box {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .dl-box label {
+      display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; flex: 1 1 100%;
+    }
+    .dl-box label span { min-width: 42px; text-align: right; }
+    .dl-box input[type="date"], .dl-box input[type="time"] {
+      flex: 1; min-width: 0; height: 34px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--card); padding: 0 10px; color-scheme: inherit;
+    }
+    body.tv .dl-box input { min-height: 48px; }
     #dlSave { display: inline-flex; align-items: center; text-decoration: none; }
     .dl-progress {
-      flex: none; height: 10px; margin: 8px 14px 0; border-radius: 999px;
+      flex: none; height: 10px; border-radius: 999px;
       background: var(--track); border: 1px solid var(--line); overflow: hidden;
     }
     .dl-progress-bar {
-      height: 100%; width: 0; border-radius: inherit; background: #3d6ec9;
+      height: 100%; width: 0; border-radius: inherit; background: var(--accent);
     }
     .dl-progress.wait .dl-progress-bar {
       width: 40%; animation: dl-wait 1.1s ease-in-out infinite;
@@ -390,58 +451,53 @@
       from { transform: translateX(-110%); }
       to { transform: translateX(280%); }
     }
-    .dl-box {
-      flex: none; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-      padding: 6px 12px 0;
-    }
-    .dl-box label {
-      display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px;
-    }
-    .dl-box input[type="date"], .dl-box input[type="time"] {
-      height: 34px; border-radius: 999px; border: 1px solid var(--line);
-      background: var(--card); padding: 0 8px; color-scheme: inherit;
-    }
-    body.tv .dl-box input { min-height: 48px; }
 
-    .timeline { flex: none; padding: 4px 14px 8px; }
-    .tl-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+    .timeline { flex: none; display: flex; flex-direction: column; gap: 6px; }
+    .tl-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
     .tl-bar {
-      position: relative; height: 44px; border-radius: 12px; background: var(--track);
+      position: relative; height: 56px; border-radius: 12px; background: var(--track);
       border: 1px solid var(--line); touch-action: none; cursor: pointer;
+      overflow: hidden;
     }
     .tl-seg {
-      position: absolute; top: 14px; height: 16px; border-radius: 4px;
-      background: linear-gradient(90deg, #ff7a4a, var(--rec)); min-width: 2px;
+      position: absolute; top: 12px; bottom: 12px; border-radius: 6px;
+      background: linear-gradient(90deg, var(--accent-2), var(--rec)); min-width: 2px;
+      opacity: .9;
     }
     .tl-play {
       position: absolute; top: 0; bottom: 0; width: 2px; background: #fff;
-      transform: translateX(-1px); pointer-events: none;
+      transform: translateX(-1px); pointer-events: none; z-index: 2;
     }
     .tl-play::after {
-      content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px;
+      content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 18px;
       border-radius: 50%; background: #fff; transform: translate(-50%, -50%);
-      box-shadow: 0 0 0 4px rgba(76,141,255,.35);
+      box-shadow: 0 0 0 5px rgba(76,141,255,.35);
     }
     .tl-bubble {
-      position: absolute; top: -22px; transform: translateX(-50%);
-      background: #fff; color: #111; font-size: 11px; font-weight: 650;
-      border-radius: 999px; padding: 2px 7px; pointer-events: none; white-space: nowrap;
+      position: absolute; top: -24px; transform: translateX(-50%);
+      background: var(--card); color: var(--text); font-size: 11px; font-weight: 650;
+      border-radius: 999px; padding: 3px 8px; pointer-events: none; white-space: nowrap;
+      border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(0,0,0,.2);
     }
-    .tl-labels { position: relative; height: 16px; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .tl-labels { position: relative; height: 16px; color: var(--muted); font-size: 10px; }
     .tl-labels span { position: absolute; transform: translateX(-50%); }
 
     .clips {
-      flex: none; max-height: 22vh; overflow: auto; margin: 0; padding: 0 8px 8px;
-      list-style: none;
+      flex: 1; min-height: 80px; overflow: auto; margin: 0; padding: 0;
+      list-style: none; display: flex; flex-direction: column; gap: 6px;
     }
     .clips li {
       display: flex; justify-content: space-between; gap: 8px;
-      padding: 10px 10px; margin: 0 4px 6px; border-radius: 12px;
+      padding: 10px 12px; border-radius: 12px;
       background: var(--card); color: var(--text); font-size: 13px;
+      cursor: pointer; border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease;
     }
-    .clips li.active { outline: 1px solid #3d6ec9; }
-    .clips li .m { color: var(--muted); font-size: 12px; }
-    .clips .rec-empty { color: var(--muted); background: transparent; }
+    .clips li:hover { background: var(--btn-on); border-color: var(--btn-line); }
+    .clips li.active { background: var(--btn-on); border-color: var(--accent); }
+    .clips li .t { font-weight: 600; }
+    .clips li .m { color: var(--muted); font-size: 12px; font-family: var(--font-mono); }
+    .clips .rec-empty { color: var(--muted); background: transparent; border: 0; cursor: default; }
 
     dialog.arch {
       width: min(640px, calc(100vw - 16px));
@@ -498,7 +554,8 @@
         padding: 10px; gap: 10px; background: var(--panel);
       }
       .shot { width: 100%; }
-      .shot .thumb { height: 120px; border-radius: 10px; }
+      .shot .thumb { height: 120px; border-radius: 12px; }
+      .shot.on { border-radius: 14px; }
       .tools {
         position: absolute; bottom: 16px; left: 16px; z-index: 5;
         background: rgba(3, 4, 10, 0.82); backdrop-filter: blur(10px);
@@ -507,7 +564,33 @@
     }
     @media (min-width: 1280px) {
       #liveView .film { width: 260px; }
-      .shot .thumb { height: 145px; }
+      .shot .thumb { height: 145px; border-radius: 14px; }
+      .shot.on { border-radius: 16px; }
+    }
+
+    /* Recording responsive layout */
+    @media (min-width: 1024px) {
+      .rec-workspace { flex-direction: row; overflow: hidden; }
+      .rec-main { flex: 1; min-height: 0; }
+      .rec-side { width: 360px; flex: none; overflow: hidden; }
+      .rec-clips { flex: 1; min-height: 0; }
+      .rec-player { min-height: 0; }
+    }
+    @media (min-width: 1280px) {
+      .rec-side { width: 400px; }
+    }
+    @media (max-width: 800px) {
+      .rec-topbar { flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 12px; }
+      .rec-topbar-controls { justify-content: flex-start; width: 100%; }
+      .rec-player { min-height: 220px; }
+      .rec-player-hud { left: 6px; right: 6px; bottom: 6px; }
+      .rec-skip .btn, .btn.rec-fs { height: 36px; padding: 0 12px; font-size: 12px; }
+      .zoom-ctl button { width: 40px; height: 40px; font-size: 20px; }
+      .rec-panel { padding: 10px; flex: none; }
+      .dl-box label { flex-wrap: wrap; row-gap: 6px; }
+      .dl-box label span { min-width: 42px; }
+      .dl-box input[type="date"], .dl-box input[type="time"] { flex: 1 1 calc(50% - 30px); }
+      .tl-labels span:nth-child(even) { display: none; }
     }
   </style>
 </head>
@@ -573,56 +656,96 @@
         </section>
 
         <section class="view" id="recView">
-          <div class="rec-head">
-        <div class="chips" id="recChips"></div>
-        <div class="rec-controls">
-          <input type="date" id="recDate" />
-          <div class="span-row" id="recSpan">
-            <button type="button" data-days="1">Today</button>
-            <button type="button" data-days="2" class="on">2 days</button>
-            <button type="button" data-days="7">7 days</button>
+          <header class="rec-topbar">
+            <div class="rec-brand">
+              <span class="rec-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
+              </span>
+              <div>
+                <strong>Recording</strong>
+                <span class="rec-topbar-sub" id="recTopSub">Select a camera and date</span>
+              </div>
+            </div>
+            <div class="rec-topbar-controls">
+              <div class="chips" id="recChips"></div>
+              <div class="rec-date-wrap">
+                <input type="date" id="recDate" />
+              </div>
+              <div class="span-row" id="recSpan">
+                <button type="button" data-days="1">Today</button>
+                <button type="button" data-days="2" class="on">2 days</button>
+                <button type="button" data-days="7">7 days</button>
+              </div>
+              <button class="btn" id="recSearch" type="button">Refresh</button>
+              <button class="btn" id="archOpen" type="button">Archive</button>
+              <button class="btn on" id="recMute" type="button">Sound</button>
+            </div>
+          </header>
+
+          <div class="rec-workspace">
+            <div class="rec-main">
+              <div class="rec-player" id="recPlayer">
+                <div class="empty" id="recPlaceholder">Drag the bar to that hour</div>
+                <div class="rec-player-hud">
+                  <div class="rec-skip">
+                    <button class="btn" id="recBack" type="button" aria-label="Back 10 seconds" aria-keyshortcuts="ArrowLeft">−10 s</button>
+                    <button class="btn" id="recFwd" type="button" aria-label="Forward 10 seconds" aria-keyshortcuts="ArrowRight">+10 s</button>
+                  </div>
+                  <button class="btn rec-fs" id="recFs" type="button">Screen</button>
+                </div>
+                <div class="zoom-ctl" id="recZoom">
+                  <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+                  <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+                </div>
+              </div>
+              <div class="rec-status" id="recStatus">The bar covers hours and days. Highest quality.</div>
+            </div>
+
+            <aside class="rec-side">
+              <div class="rec-panel rec-export">
+                <div class="rec-panel-head">
+                  <strong>Export</strong>
+                  <span class="rec-panel-hint">Download a span</span>
+                </div>
+                <div class="dl-box">
+                  <label><span>From</span><input type="date" id="dlFromDate" /><input type="time" id="dlFromTime" step="1" /></label>
+                  <label><span>To</span><input type="date" id="dlToDate" /><input type="time" id="dlToTime" step="1" /></label>
+                  <button class="btn" id="dlBtn" type="button">Download</button>
+                  <button class="btn" id="dlHere" type="button">1 min from here</button>
+                  <a class="btn" id="dlSave" hidden>Save</a>
+                </div>
+                <div class="dl-progress" id="dlProgress" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Video download">
+                  <div class="dl-progress-bar" id="dlProgressBar"></div>
+                </div>
+                <div class="rec-status" id="dlStatus"></div>
+              </div>
+
+              <div class="rec-panel rec-timeline">
+                <div class="rec-panel-head">
+                  <strong>Timeline</strong>
+                  <span class="rec-panel-hint" id="tlRange">Recording</span>
+                </div>
+                <div class="timeline">
+                  <div class="tl-bar" id="tlBar" role="slider" aria-label="Recording timeline">
+                    <div class="tl-play" id="tlPlay"><span class="tl-bubble" id="tlBubble">—</span></div>
+                  </div>
+                  <div class="tl-labels" id="tlLabels"></div>
+                  <div class="tl-top">
+                    <span id="tlNow">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rec-panel rec-clips">
+                <div class="rec-panel-head">
+                  <strong>Clips</strong>
+                  <span class="rec-panel-hint" id="clipCount">0 found</span>
+                </div>
+                <ul class="clips" id="clipList"></ul>
+              </div>
+            </aside>
           </div>
-          <button class="btn" id="recSearch" type="button">Refresh</button>
-          <button class="btn" id="archOpen" type="button">Archive</button>
-          <button class="btn on" id="recMute" type="button">Sound</button>
-        </div>
-      </div>
-      <div class="rec-player" id="recPlayer">
-        <div class="empty" id="recPlaceholder">Drag the bar to that hour</div>
-        <div class="rec-skip">
-          <button class="btn" id="recBack" type="button" aria-label="Back 10 seconds" aria-keyshortcuts="ArrowLeft">−10 s</button>
-          <button class="btn" id="recFwd" type="button" aria-label="Forward 10 seconds" aria-keyshortcuts="ArrowRight">+10 s</button>
-        </div>
-        <button class="btn rec-fs" id="recFs" type="button">Screen</button>
-        <div class="zoom-ctl" id="recZoom">
-          <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
-          <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
-        </div>
-      </div>
-      <div class="rec-status" id="recStatus">The bar covers hours and days. Highest quality.</div>
-      <div class="dl-box">
-        <label>From <input type="date" id="dlFromDate" /><input type="time" id="dlFromTime" step="1" /></label>
-        <label>To <input type="date" id="dlToDate" /><input type="time" id="dlToTime" step="1" /></label>
-        <button class="btn" id="dlBtn" type="button">Download</button>
-        <button class="btn" id="dlHere" type="button">1 min from here</button>
-        <a class="btn" id="dlSave" hidden>Save</a>
-      </div>
-      <div class="dl-progress" id="dlProgress" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Video download">
-        <div class="dl-progress-bar" id="dlProgressBar"></div>
-      </div>
-      <div class="rec-status" id="dlStatus"></div>
-      <div class="timeline">
-        <div class="tl-top">
-          <span id="tlRange">Recording</span>
-          <span id="tlNow">—</span>
-        </div>
-        <div class="tl-bar" id="tlBar" role="slider" aria-label="Recording timeline">
-          <div class="tl-play" id="tlPlay"><span class="tl-bubble" id="tlBubble">—</span></div>
-        </div>
-        <div class="tl-labels" id="tlLabels"></div>
-      </div>
-      <ul class="clips" id="clipList"></ul>
-    </section>
+        </section>
       </div><!-- /.workspace -->
     </div><!-- /.main -->
 
@@ -1044,7 +1167,7 @@
       else start();
       const tag = document.createElement('div');
       tag.className = 'tag';
-      tag.innerHTML = `<span>${cam.name}</span><b class="${quality === 'main' ? '' : 'sub'}">${quality === 'main' ? 'HD' : 'Smooth'}</b>`;
+      tag.innerHTML = `<span class="cell-name">${cam.name}</span><b class="badge ${quality === 'main' ? '' : 'sub'}">${quality === 'main' ? 'HD' : 'Smooth'}</b>`;
       cell.append(vs, tag);
       if (view === 'grid') {
         cell.addEventListener('click', () => openOne(streamCams.indexOf(cam)));
@@ -1130,7 +1253,7 @@
         b.type = 'button';
         b.className = 'shot';
         b.dataset.id = cam.id;
-        b.innerHTML = `<div class="thumb"></div><small>${cam.name}</small>`;
+        b.innerHTML = `<div class="thumb"></div><div class="shot-info"><span class="shot-name">${cam.name}</span><span class="shot-meta">CH-${cam.id}</span></div>`;
         const thumb = b.querySelector('.thumb');
         b.addEventListener('click', () => openOne(streamCams.indexOf(cam)));
         film.appendChild(b);
@@ -1807,6 +1930,8 @@
     function renderClips() {
       clipList.innerHTML = '';
       const items = (recData && recData.items) || [];
+      const cc = document.getElementById('clipCount');
+      if (cc) cc.textContent = items.length + ' found';
       if (!items.length) {
         clipList.innerHTML = '<li class="rec-empty">No recording in that range</li>';
         return;
@@ -2219,6 +2344,9 @@
       recData = j;
       recPlayFrom = null;
       recPlayAt = 0;
+      const camName = (streamCams.find(c => dvrChannel(c) === recChannel) || {}).name || 'Camera';
+      const topSub = document.getElementById('recTopSub');
+      if (topSub) topSub.textContent = camName;
       drawTimeline();
       renderClips();
       const items = j.items || [];
