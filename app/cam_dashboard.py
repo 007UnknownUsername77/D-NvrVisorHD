@@ -35,7 +35,7 @@ from urllib.request import (
     urlopen,
 )
 
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.3.1"
 ROOT = Path(os.environ.get("CAM_VIEWER_ROOT", "/var/www/cam-viewer"))
 PORT = int(os.environ.get("CAM_VIEWER_PORT", "8090"))
 HOST = os.environ.get("CAM_VIEWER_HOST", os.environ.get("VISOR_HOST", "127.0.0.1"))

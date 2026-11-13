@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="visor-version" content="0.3.0" />
+  <meta name="visor-version" content="0.3.1" />
   <meta name="apple-mobile-web-app-title" content="Visor" />
   <link rel="icon" href="./icon.png" type="image/png">
   <link rel="apple-touch-icon" href="./icon.png">
@@ -822,7 +822,8 @@
         const isRec = vs.dataset.rec === '1';
         v.muted = isRec ? recMuted : muted;
         v.autoplay = true;
-        if (isTV || vs.dataset.rec === '1') {
+        if (!isRec) holdLiveClock(v);
+        else if (isTV || isRec) {
           if (isTV) v.controls = false;
           try {
             const rate = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'playbackRate');
@@ -870,17 +871,42 @@
       stage.innerHTML = '';
     }
 
+    function holdLiveClock(v) {
+      if (!v || v.dataset.liveClock === '1') return;
+      v.dataset.liveClock = '1';
+      try {
+        const rate = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'playbackRate');
+        if (rate && rate.set && !Object.prototype.hasOwnProperty.call(v, 'playbackRate')) {
+          Object.defineProperty(v, 'playbackRate', {
+            configurable: true,
+            get() { return rate.get.call(this); },
+            set() { rate.set.call(this, 1); },
+          });
+        }
+      } catch (_) {}
+      try { v.playbackRate = 1; } catch (_) {}
+    }
+    function pinLiveEdge(v) {
+      if (!v || v.paused || v.seeking || v.readyState < 2 || !v.buffered || !v.buffered.length) return;
+      let end = 0;
+      try { end = v.buffered.end(v.buffered.length - 1); } catch (_) { return; }
+      const lag = end - v.currentTime;
+      // One frame is about 100 ms. HLS needs almost one half-second piece.
+      const behind = isIOS ? 0.45 : (view === 'grid' ? 0.12 : 0.08);
+      const limit = isIOS ? 0.9 : (view === 'grid' ? 0.28 : 0.16);
+      if (lag > limit) {
+        try { v.currentTime = Math.max(0, end - behind); } catch (_) {}
+      }
+    }
     function armLiveEdge() {
-      if (!isTV || view !== 'grid') return;
+      if (liveEdgeTimer) clearInterval(liveEdgeTimer);
       liveEdgeTimer = setInterval(() => {
+        if (document.body.dataset.mode !== 'live') return;
         stage.querySelectorAll('video').forEach(v => {
-          if (v.readyState < 2 || !v.buffered || !v.buffered.length) return;
-          const end = v.buffered.end(v.buffered.length - 1);
-          if (end - v.currentTime > 1.2) {
-            try { v.currentTime = Math.max(0, end - 0.35); } catch (_) {}
-          }
+          holdLiveClock(v);
+          pinLiveEdge(v);
         });
-      }, 2000);
+      }, 200);
     }
 
     function markGrid() {
@@ -944,6 +970,7 @@
           liveHint.textContent = isTV
             ? (hd ? 'HD · 1 channel' : 'TV · 1 channel')
             : (hd ? 'HD · 1 channel' : 'Smooth · 1 channel');
+          armLiveEdge();
         }
       } else {
         stage.innerHTML = '<div class="empty">Looking for a picture…</div>';

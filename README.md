@@ -4,7 +4,7 @@
   <img src="docs/icon.png" alt="Visor" width="128">
 </p>
 
-<p align="center"><strong>0.3.0</strong></p>
+<p align="center"><strong>0.3.1</strong></p>
 
 Self-hosted viewer and recording browser for your own recorder. Live picture is any RTSP camera through [go2rtc](https://github.com/AlexxIT/go2rtc). Recording search and download use a Hikvision ISAPI adapter, for both analog channels and IP cameras on that recorder. Nothing is uploaded to a vendor cloud.
 
@@ -19,7 +19,7 @@ Live view works for any camera go2rtc can open. Recording, today, works for a Hi
 
 ## Version
 
-Public app **0.3.0**. See [CHANGELOG.md](CHANGELOG.md). The lab viewer is a separate build, `lab-2026.11.11`, and it is not this tree.
+Public app **0.3.1**. See [CHANGELOG.md](CHANGELOG.md). The lab viewer is a separate build and it is not this tree.
 
 ## What you need
 

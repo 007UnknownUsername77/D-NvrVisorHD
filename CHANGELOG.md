@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 — 2026-11-12
+
+Live view stays on the newest buffered frame. Playback speed stays at 1, so the picture does not drift seconds behind. On a computer the target is about one frame. On iPhone HLS the target is the newest half-second piece.
+
 ## 0.3.0 — 2026-11-11
 
 First numbered public release. The number is in `VERSION`, in the page meta tag `visor-version`, and in `APP_VERSION` in `app/cam_dashboard.py`.
