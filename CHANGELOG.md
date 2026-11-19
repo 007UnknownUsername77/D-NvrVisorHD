@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3 — 2026-11-19
+
+The camera name sits on the bottom of the picture. Each film card shows the channel number. On a wide screen, export, the timeline, and the clip list sit beside the player. The tool row stays under the picture.
+
 ## 0.3.2 — 2026-11-13
 
 The desktop layout proposed in pull request 2 is accepted. The five themes, the sidebar, and the camera list beside the picture stay. Playback is the same.
